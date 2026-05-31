@@ -216,6 +216,22 @@ img, video, canvas, svg { max-width: 100%; }
 .po-day-sep { color: var(--text-4); }
 .po-day-split { color: var(--good); font-weight: 800; }
 .po-day-split.is-rest { color: #7DD3FC; }
+.po-day-nav {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.po-day-nav .po-day-pill { margin-bottom: 0; flex: 1; justify-content: center; }
+.po-day-nav-btn {
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-2); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.po-day-nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+.po-day-nav-btn:disabled { opacity: 0.22; cursor: not-allowed; }
 
 .po-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1268,11 +1284,15 @@ img, video, canvas, svg { max-width: 100%; }
 <body>
 
 <div class="po-shell">
-  <button class="po-day-pill" type="button" id="dayPill" title="Tap to switch the day filter to today's split">
-    <span class="po-day-date" id="dayPillDate">—</span>
-    <span class="po-day-sep">·</span>
-    <span class="po-day-split" id="dayPillSplit">—</span>
-  </button>
+  <div class="po-day-nav">
+    <button class="po-day-nav-btn" id="gymDayPrevBtn" aria-label="Día anterior">‹</button>
+    <button class="po-day-pill" type="button" id="dayPill" title="Editar rotación de split">
+      <span class="po-day-date" id="dayPillDate">—</span>
+      <span class="po-day-sep">·</span>
+      <span class="po-day-split" id="dayPillSplit">—</span>
+    </button>
+    <button class="po-day-nav-btn" id="gymDayNextBtn" aria-label="Día siguiente" disabled>›</button>
+  </div>
 
   <!-- WEIGHT + PROGRESS PHOTOS -->
   <div class="wt-section">
@@ -1991,12 +2011,12 @@ img, video, canvas, svg { max-width: 100%; }
   }
   // Compute today's split from state.splitRotation + state.splitAnchor.
   // Returns the rotation entry name (e.g. "Push" or "Rest") AND the index.
-  function todaySplit() {
+  function splitForDate(d) {
     try {
       const rot = state.splitRotation;
       if (!rot || !rot.length) return { name: '—', index: 0 };
       const a = new Date(state.splitAnchor.date);
-      const t = new Date();
+      const t = new Date(d);
       a.setHours(0,0,0,0); t.setHours(0,0,0,0);
       const diffDays = Math.round((t - a) / 86400000);
       const idx = ((state.splitAnchor.index + diffDays) % rot.length + rot.length) % rot.length;
@@ -2005,23 +2025,22 @@ img, video, canvas, svg { max-width: 100%; }
       return { name: (state.splitRotation && state.splitRotation[0]) || '—', index: 0 };
     }
   }
-  function todayDateLabel() {
-    const d = new Date();
-    const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    return dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
-  }
+  function todaySplit() { return splitForDate(new Date()); }
   function isRestName(name) { return /^rest\b/i.test(name || ''); }
   function splitLabel(name) {
     if (!name) return '—';
     return (isRestName(name) ? 'REST DAY' : (name + ' DAY')).toUpperCase();
   }
   function renderDayPill() {
-    const split = todaySplit();
-    $('dayPillDate').textContent = todayDateLabel();
+    const d = gymViewDate;
+    const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    $('dayPillDate').textContent = dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
+    const split = splitForDate(gymViewDate);
     const splitEl = $('dayPillSplit');
     splitEl.textContent = splitLabel(split.name);
     splitEl.classList.toggle('is-rest', isRestName(split.name));
+    $('gymDayNextBtn').disabled = isGymToday();
   }
 
   // Build the rep buttons based on the current exercise's repMin/repMax.
@@ -2096,6 +2115,9 @@ img, video, canvas, svg { max-width: 100%; }
   }
   let doneDays = loadDoneDays();
 
+  let gymViewDate = new Date();
+  function isGymToday() { return wtDateKey(gymViewDate) === wtDateKey(new Date()); }
+
   function logsByDay() {
     const byDay = {};
     state.exercises.forEach(ex => {
@@ -2131,7 +2153,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   function renderTodaysWorkout() {
-    const todayKey = wtDateKey(new Date());
+    const todayKey = wtDateKey(gymViewDate);
     const all = logsByDay();
     const todaySets = all[todayKey] || [];
     const sum = summarizeDay(todaySets);
@@ -2140,8 +2162,8 @@ img, video, canvas, svg { max-width: 100%; }
     const eyebrow = $('poTwDateLabel');
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const d = new Date();
-    eyebrow.textContent = 'TODAY · ' + dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
+    const d = gymViewDate;
+    eyebrow.textContent = (isGymToday() ? 'TODAY · ' : '') + dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
 
     $('poTwSetCount').textContent = sum.totalSets;
     $('poTwTotalVol').textContent = Math.round(sum.totalVol).toLocaleString() + ' ' + u + ' lifted';
@@ -2210,15 +2232,31 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   $('poTwDoneBtn').addEventListener('click', () => {
-    const todayKey = wtDateKey(new Date());
-    if (doneDays[todayKey]) {
-      delete doneDays[todayKey];
+    const dk = wtDateKey(gymViewDate);
+    if (doneDays[dk]) {
+      delete doneDays[dk];
     } else {
-      doneDays[todayKey] = new Date().toISOString();
+      doneDays[dk] = new Date().toISOString();
     }
     saveDoneDays(doneDays);
     renderTodaysWorkout();
     renderPastWorkouts();
+  });
+
+  $('gymDayPrevBtn').addEventListener('click', () => {
+    gymViewDate = new Date(gymViewDate.getFullYear(), gymViewDate.getMonth(), gymViewDate.getDate() - 1);
+    renderDayPill();
+    renderTodaysWorkout();
+  });
+  $('gymDayNextBtn').addEventListener('click', () => {
+    if (isGymToday()) return;
+    gymViewDate = new Date(gymViewDate.getFullYear(), gymViewDate.getMonth(), gymViewDate.getDate() + 1);
+    renderDayPill();
+    renderTodaysWorkout();
+  });
+  $('dayPill').addEventListener('click', () => {
+    if (!isGymToday()) { gymViewDate = new Date(); renderDayPill(); renderTodaysWorkout(); }
+    else openRotationModal();
   });
   $('poTwPastToggle').addEventListener('click', () => {
     const body = $('poTwPastBody');
@@ -2235,8 +2273,8 @@ img, video, canvas, svg { max-width: 100%; }
   // Tap the day pill → opens the rotation editor so you can rename /
   // reorder / add / delete entries (e.g. switch Push/Pull/Legs/Rest to
   // Legs/Arms/Back/Chest). Long-press isn't a thing on web reliably so
-  // this is the only action — the day filter still auto-snaps on load.
-  $('dayPill').addEventListener('click', () => openRotationModal());
+  // the day pill now navigates: tap on a past day returns to today + opens
+  // the rotation editor; tap on today opens the rotation editor directly.
 
   // First-load nicety: if today's split matches one of the day filters
   // by name (case-insensitive) and the user hasn't manually picked one,

@@ -100,6 +100,22 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 .day-pill .day-sep { color: var(--text-4); }
+.day-nav {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.day-nav .day-pill { margin-bottom: 0; flex: 1; justify-content: center; }
+.day-nav-btn {
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-2); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.day-nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+.day-nav-btn:disabled { opacity: 0.22; cursor: not-allowed; }
 
 .header {
   display: flex; align-items: center; justify-content: space-between;
@@ -462,9 +478,13 @@ html, body {
 
 <div class="shell">
 
-  <button class="day-pill" id="dayPill" type="button">
-    <span id="dayPillLabel">—</span>
-  </button>
+  <div class="day-nav">
+    <button class="day-nav-btn" id="dayPrevBtn" aria-label="Día anterior">‹</button>
+    <button class="day-pill" id="dayPill" type="button" title="Toca para ir a hoy">
+      <span id="dayPillLabel">—</span>
+    </button>
+    <button class="day-nav-btn" id="dayNextBtn" aria-label="Día siguiente" disabled>›</button>
+  </div>
 
   <div class="header">
     <h1 class="title" id="appTitle">Water Coach</h1>
@@ -709,6 +729,17 @@ html, body {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
   }
   let state = loadState();
+
+  let viewDate = new Date();
+  function viewKey() { return dateKey(viewDate); }
+  function isToday() { return viewKey() === todayKey(); }
+  function viewCount() { return state.logs[viewKey()] || 0; }
+  function setViewCount(n) {
+    const k = viewKey();
+    if (n <= 0) delete state.logs[k];
+    else state.logs[k] = n;
+    saveState();
+  }
   $('appTitle').textContent = CONFIG.appTitle || 'Water Coach';
 
   // Helpers
@@ -776,19 +807,20 @@ html, body {
   // RENDER
   // ============================================================
   function renderDayPill() {
-    const d = new Date();
+    const d = viewDate;
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     $('dayPillLabel').textContent = dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
+    $('dayNextBtn').disabled = isToday();
   }
 
   function renderWater() {
     const calc = computeTargetMl();
     const targetUnits = Math.ceil(calc.total / unitVolMl());
-    const count = todayCount();
+    const count = viewCount();
     const unitName = unitLabelPlural();
 
-    $('waterUnitLabel').textContent = unitName.toUpperCase() + ' DRANK TODAY';
+    $('waterUnitLabel').textContent = unitName.toUpperCase() + (isToday() ? ' DRANK TODAY' : ' DRANK · ' + $('dayPillLabel').textContent);
     $('waterNum').textContent = count;
     $('waterTarget').textContent = '/ ' + targetUnits;
     $('waterPlusLabel').textContent = 'Drank a ' + unitLabelSingular();
@@ -899,15 +931,28 @@ html, body {
   // EVENT WIRING
   // ============================================================
   $('waterPlusBtn').addEventListener('click', () => {
-    setTodayCount(todayCount() + 1);
+    setViewCount(viewCount() + 1);
     renderWater();
     const btn = $('waterPlusBtn');
     btn.style.transform = 'scale(0.97)';
     setTimeout(() => { btn.style.transform = ''; }, 120);
   });
   $('waterMinusBtn').addEventListener('click', () => {
-    setTodayCount(Math.max(0, todayCount() - 1));
+    setViewCount(Math.max(0, viewCount() - 1));
     renderWater();
+  });
+
+  $('dayPrevBtn').addEventListener('click', () => {
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() - 1);
+    renderAll();
+  });
+  $('dayNextBtn').addEventListener('click', () => {
+    if (isToday()) return;
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() + 1);
+    renderAll();
+  });
+  $('dayPill').addEventListener('click', () => {
+    if (!isToday()) { viewDate = new Date(); renderAll(); }
   });
 
   $('whyToggle').addEventListener('click', () => {

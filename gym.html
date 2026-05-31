@@ -16,77 +16,82 @@
      ============================================================= -->
 <script>
 const CONFIG = {
-  appTitle: "Progressive Overload Coach",
+  appTitle: "RUTINA OMAR v2",
 
-  // Weight unit shown everywhere. "kg" or "lb".
   units: "kg",
 
-  // Gyms you train at. Add as many as you want.
-  // `id` must be a short unique slug (no spaces). `name` is what people see.
   gyms: [
-    { id: "home",  name: "Home Gym" },
-    { id: "comm",  name: "Commercial Gym" }
+    { id: "gym", name: "Gym" }
   ],
 
-  // Training split. Most people use Push/Pull/Legs but you can rename
-  // these to "Upper", "Lower", "Full Body", "Day A", anything.
+  // 4-day hypertrophy split: Push · Lower · Pull · Estética
   days: [
-    { id: "push", name: "Push" },
-    { id: "pull", name: "Pull" },
-    { id: "legs", name: "Legs" }
+    { id: "push",     name: "Push"     },
+    { id: "lower",    name: "Lower"    },
+    { id: "pull",     name: "Pull"     },
+    { id: "estetica", name: "Estética" }
   ],
 
-  // Split rotation — the order your training days cycle through. Use day
-  // ids from `days` above, plus "rest" for off-days. The pill at the top
-  // of the app reads this + splitAnchor to compute "what day is today".
-  splitRotation: ["push", "pull", "legs", "rest"],
+  // Lunes=Push · Martes=Lower · Miér=rest · Jueves=Pull · Vier=rest · Sáb=Estética · Dom=rest
+  splitRotation: ["push", "lower", "rest", "pull", "rest", "estetica", "rest"],
 
-  // Anchor: pair a real calendar date with which split day fell on it.
-  // The rotation advances from this point. Set `date` to a recent day
-  // when you knew what split you were on, and `splitId` to that day.
-  // Edit this if your split drifts.
+  // Anchor: Monday 2026-06-02 = Push day (index 0 in the rotation above)
   splitAnchor: {
-    date: "2026-05-12",
-    splitId: "rest"
+    date: "2026-06-02",
+    splitId: "push"
   },
 
-  // Progression rule: hit this many reps on the top set → coach tells you
-  // to add weight next session. Lower this to be more aggressive (e.g. 6),
-  // raise it for more volume bias (e.g. 10).
+  // Doble progresión: llega al límite superior en todas las series → +2.5 kg
   upgradeAtReps: 8,
 
-  // Composition estimate (optional, for the weight chart).
-  // Estimates how much of recent weight change is muscle vs fat by
-  // cross-referencing the strength trend. Set yearsTraining to scale
-  // expected muscle gain rate.
   composition: {
     enabled: true,
-    yearsTraining: 1,        // 1 = beginner, 2 = intermediate, 3+ = advanced
-    windowDays: 30           // window to compute weight + strength change
+    yearsTraining: 1,
+    windowDays: 30
   },
 
-  // Starter exercise list. Each one needs:
-  //   name        — what shows in the dropdown
-  //   gym         — one of the gym ids above, or "both"
-  //   day         — one of the day ids above
-  //   repMin      — bottom of your target rep range
-  //   repMax      — top of your target rep range
-  //   step        — how much weight you add when progressing (kg/lb)
-  //   startWeight — starting weight (ignored when bw: true)
-  //   bw          — true for bodyweight movements (logs reps only)
-  //
-  // First-run defaults. Once a user logs anything, they edit through
-  // the in-app + / gear buttons; this block stays as the seed.
   defaultExercises: [
-    { name: "Bench press",     gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 2.5, startWeight: 60 },
-    { name: "Overhead press",  gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 2.5, startWeight: 35 },
-    { name: "Tricep pushdown", gym: "comm", day: "push", repMin: 8, repMax: 12, step: 2.5, startWeight: 25 },
-    { name: "Pull-ups",        gym: "both", day: "pull", repMin: 5, repMax: 10, step: 1,   startWeight: 0, bw: true },
-    { name: "Barbell row",     gym: "comm", day: "pull", repMin: 6, repMax: 10, step: 2.5, startWeight: 50 },
-    { name: "Bicep curl",      gym: "comm", day: "pull", repMin: 8, repMax: 12, step: 1.25,startWeight: 15 },
-    { name: "Back squat",      gym: "comm", day: "legs", repMin: 5, repMax: 8,  step: 5,   startWeight: 80 },
-    { name: "Romanian deadlift", gym: "comm", day: "legs", repMin: 6, repMax: 10, step: 5, startWeight: 60 },
-    { name: "Leg press",       gym: "comm", day: "legs", repMin: 8, repMax: 12, step: 5,   startWeight: 100 }
+    // ── DAY 1 · PUSH — Pecho · Hombros · Tríceps · Antebrazos ──────────────
+    { name: "Press Banca Barra",               gym: "gym", day: "push",     repMin: 6,  repMax: 8,  step: 2.5,  startWeight: 60  },
+    { name: "Press Inclinado Mancuernas",      gym: "gym", day: "push",     repMin: 8,  repMax: 12, step: 2.5,  startWeight: 22  },
+    { name: "Pecho Superior Máquina",          gym: "gym", day: "push",     repMin: 10, repMax: 15, step: 5,    startWeight: 40  },
+    { name: "Elevaciones Laterales Mancuernas",gym: "gym", day: "push",     repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
+    { name: "Elevaciones Laterales Cable",     gym: "gym", day: "push",     repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Fondos Máquina / Press Francés",  gym: "gym", day: "push",     repMin: 10, repMax: 15, step: 2.5,  startWeight: 30  },
+    { name: "Tríceps Polea Cuerda",            gym: "gym", day: "push",     repMin: 12, repMax: 15, step: 2.5,  startWeight: 20  },
+    { name: "Curl Muñeca Polea Supino",        gym: "gym", day: "push",     repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Extensión Muñeca Polea Prono",    gym: "gym", day: "push",     repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+
+    // ── DAY 2 · LOWER — Cuádriceps · Femoral · Glúteo · Gemelos · Core ─────
+    { name: "Hack Squat",                      gym: "gym", day: "lower",    repMin: 6,  repMax: 10, step: 5,    startWeight: 80  },
+    { name: "Prensa Inclinada",                gym: "gym", day: "lower",    repMin: 10, repMax: 15, step: 5,    startWeight: 100 },
+    { name: "Curl Femoral Tumbado",            gym: "gym", day: "lower",    repMin: 10, repMax: 15, step: 2.5,  startWeight: 30  },
+    { name: "Hip Thrust Barra",                gym: "gym", day: "lower",    repMin: 10, repMax: 12, step: 5,    startWeight: 60  },
+    { name: "Gemelos Máquina",                 gym: "gym", day: "lower",    repMin: 12, repMax: 20, step: 2.5,  startWeight: 40  },
+    { name: "Carga Lateral Oblicuos",          gym: "gym", day: "lower",    repMin: 12, repMax: 15, step: 1.25, startWeight: 12  },
+    { name: "Pallof Press Polea",              gym: "gym", day: "lower",    repMin: 12, repMax: 15, step: 2.5,  startWeight: 10  },
+
+    // ── DAY 3 · PULL — Espalda · Bíceps · Antebrazos ───────────────────────
+    { name: "Remo Máquina Horizontal",         gym: "gym", day: "pull",     repMin: 8,  repMax: 12, step: 2.5,  startWeight: 50  },
+    { name: "Jalón Agarre Abierto",            gym: "gym", day: "pull",     repMin: 8,  repMax: 12, step: 2.5,  startWeight: 50  },
+    { name: "Jalón Agarre Cerrado",            gym: "gym", day: "pull",     repMin: 10, repMax: 15, step: 2.5,  startWeight: 45  },
+    { name: "Remo Polea Baja",                 gym: "gym", day: "pull",     repMin: 10, repMax: 15, step: 2.5,  startWeight: 40  },
+    { name: "Face Pulls Polea Alta",           gym: "gym", day: "pull",     repMin: 15, repMax: 20, step: 2.5,  startWeight: 15  },
+    { name: "Curl Bíceps Barra Z Abierto",     gym: "gym", day: "pull",     repMin: 8,  repMax: 12, step: 2.5,  startWeight: 30  },
+    { name: "Curl Concentrado Máquina",        gym: "gym", day: "pull",     repMin: 10, repMax: 15, step: 2.5,  startWeight: 25  },
+    { name: "Curl Martillo Mancuerna",         gym: "gym", day: "pull",     repMin: 10, repMax: 15, step: 1.25, startWeight: 14  },
+    { name: "Curl Muñeca Polea Supino",        gym: "gym", day: "pull",     repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Extensión Muñeca Polea Prono",    gym: "gym", day: "pull",     repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+
+    // ── DAY 4 · ESTÉTICA — Hombros · Brazos · Core · Cuello ─────────────────
+    { name: "Press Hombro Mancuernas",         gym: "gym", day: "estetica", repMin: 8,  repMax: 12, step: 2.5,  startWeight: 18  },
+    { name: "Elevaciones Laterales Mancuernas",gym: "gym", day: "estetica", repMin: 15, repMax: 20, step: 1.25, startWeight: 8   },
+    { name: "Curl Bíceps Inclinado 45°",       gym: "gym", day: "estetica", repMin: 10, repMax: 15, step: 1.25, startWeight: 10  },
+    { name: "Extensión Tríceps Polea",         gym: "gym", day: "estetica", repMin: 12, repMax: 15, step: 2.5,  startWeight: 20  },
+    { name: "Encogimientos Mancuernas",        gym: "gym", day: "estetica", repMin: 12, repMax: 15, step: 2.5,  startWeight: 20  },
+    { name: "Carga Lateral Oblicuos",          gym: "gym", day: "estetica", repMin: 12, repMax: 15, step: 1.25, startWeight: 12  },
+    { name: "Curl Muñeca Antebrazo Polea",     gym: "gym", day: "estetica", repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Flexión Cuello Máquina",          gym: "gym", day: "estetica", repMin: 15, repMax: 20, step: 2.5,  startWeight: 15  }
   ]
 };
 </script>

@@ -238,6 +238,77 @@ img, video, canvas, svg { max-width: 100%; }
 .po-day-nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
 .po-day-nav-btn:disabled { opacity: 0.22; cursor: not-allowed; }
 
+/* ── Weekly completion badges ──────────────────────────────── */
+.week-badges {
+  display: flex; gap: 8px; margin-bottom: 18px;
+}
+.week-badge {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 9px 4px 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.week-badge-icon { font-size: 15px; line-height: 1; }
+.week-badge.done { border-color: rgba(110,231,183,0.30); color: var(--good); }
+.week-badge.done .week-badge-icon { color: var(--good); }
+@keyframes badge-blink {
+  0%, 100% { opacity: 1; }
+  45%       { opacity: 0.18; }
+}
+@keyframes badge-pulse {
+  0%, 100% { border-color: rgba(251,191,36,0.30); }
+  50%       { border-color: rgba(251,191,36,0.70); }
+}
+.week-badge.urgent {
+  color: var(--bad); border-color: rgba(255,138,138,0.35);
+  animation: badge-blink 0.85s ease-in-out infinite;
+}
+.week-badge.warn {
+  color: var(--warn);
+  animation: badge-pulse 1.3s ease-in-out infinite;
+}
+
+/* ── Split picker bottom sheet ─────────────────────────────── */
+.split-picker-bg {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center;
+}
+.split-picker-bg.show { display: flex; }
+.split-picker {
+  width: 100%; max-width: 480px;
+  background: #1a1a1f; border-radius: 20px 20px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.10);
+  padding: 20px 18px max(24px, env(safe-area-inset-bottom));
+}
+.split-picker-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--text-3); text-transform: uppercase;
+  text-align: center; margin-bottom: 14px;
+}
+.split-picker-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.split-picker-btn {
+  width: 100%; padding: 14px 16px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px; color: var(--text-1);
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 12px;
+  -webkit-tap-highlight-color: transparent; transition: background 0.14s;
+}
+.split-picker-btn:hover { background: rgba(255,255,255,0.08); }
+.split-picker-btn.active { border-color: rgba(110,231,183,0.40); background: rgba(110,231,183,0.06); }
+.split-picker-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.split-picker-cancel {
+  width: 100%; padding: 13px; background: rgba(255,255,255,0.06);
+  border: none; border-radius: 13px; color: var(--text-2);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.split-picker-cancel:hover { background: rgba(255,255,255,0.10); }
+
 .po-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 18px;
@@ -1299,6 +1370,9 @@ img, video, canvas, svg { max-width: 100%; }
     <button class="po-day-nav-btn" id="gymDayNextBtn" aria-label="Día siguiente" disabled>›</button>
   </div>
 
+  <!-- Weekly completion badges -->
+  <div class="week-badges" id="weekBadges"></div>
+
   <!-- WEIGHT + PROGRESS PHOTOS -->
   <div class="wt-section">
     <div class="wt-divider"><span>WEIGHT</span></div>
@@ -2041,10 +2115,17 @@ img, video, canvas, svg { max-width: 100%; }
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     $('dayPillDate').textContent = dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
-    const split = splitForDate(gymViewDate);
+    const dk = wtDateKey(d);
+    const assigned = dayAssignments[dk];
     const splitEl = $('dayPillSplit');
-    splitEl.textContent = splitLabel(split.name);
-    splitEl.classList.toggle('is-rest', isRestName(split.name));
+    if (assigned) {
+      const def = state.days.find(x => x.id === assigned);
+      splitEl.textContent = assigned === 'rest' ? 'REST' : ((def ? def.name : assigned) + ' DAY').toUpperCase();
+      splitEl.classList.toggle('is-rest', assigned === 'rest');
+    } else {
+      splitEl.textContent = isGymToday() ? '↑ Elige split' : '—';
+      splitEl.classList.remove('is-rest');
+    }
     $('gymDayNextBtn').disabled = isGymToday();
   }
 
@@ -2083,6 +2164,7 @@ img, video, canvas, svg { max-width: 100%; }
 
   function renderAll() {
     renderDayPill();
+    renderWeeklyBadges();
     renderFilters(); renderSelect(); renderForm(); renderLastSet();
     renderRepsRow();
     renderRx(); renderStats(); renderSparkline(); renderHistory();
@@ -2122,6 +2204,90 @@ img, video, canvas, svg { max-width: 100%; }
 
   let gymViewDate = new Date();
   function isGymToday() { return wtDateKey(gymViewDate) === wtDateKey(new Date()); }
+
+  // ── Day assignments: {YYYY-MM-DD: splitId} ──────────────────
+  const DAY_ASSIGNMENTS_KEY = 'gym_day_assignments';
+  function loadDayAssignments() {
+    try { const r = localStorage.getItem(DAY_ASSIGNMENTS_KEY); return r ? JSON.parse(r) : {}; } catch { return {}; }
+  }
+  function saveDayAssignments(d) {
+    try { localStorage.setItem(DAY_ASSIGNMENTS_KEY, JSON.stringify(d)); } catch {}
+  }
+  let dayAssignments = loadDayAssignments();
+
+  const SPLIT_COLORS = { push: '#FB923C', lower: '#60A5FA', pull: '#6ee7b7', estetica: '#C084FC', rest: '#6B7280' };
+
+  function assignDay(dk, splitId) {
+    dayAssignments[dk] = splitId;
+    saveDayAssignments(dayAssignments);
+    if (dk === wtDateKey(new Date()) && splitId !== 'rest') {
+      state.filterDay = splitId;
+      saveState();
+    }
+    renderDayPill();
+    renderWeeklyBadges();
+    renderAll();
+  }
+
+  // ── Weekly completion badges ─────────────────────────────────
+  function getWeekDays() {
+    const today = new Date();
+    const dow = today.getDay();
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    mon.setHours(0,0,0,0);
+    const days = [];
+    for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
+    return days;
+  }
+
+  function renderWeeklyBadges() {
+    const container = $('weekBadges');
+    if (!container) return;
+    const weekDays = getWeekDays();
+    const todayDk = wtDateKey(new Date());
+    const todayIdx = weekDays.findIndex(d => wtDateKey(d) === todayDk);
+    const daysLeft = todayIdx >= 0 ? 7 - todayIdx : 1;
+    const splits = state.days;
+    const doneSplits = new Set();
+    weekDays.forEach(d => {
+      const a = dayAssignments[wtDateKey(d)];
+      if (a && a !== 'rest') doneSplits.add(a);
+    });
+    const missing = splits.filter(s => !doneSplits.has(s.id));
+    const isRed  = missing.length > 0 && missing.length >= daysLeft;
+    const isWarn = !isRed && missing.length > 0 && daysLeft <= 3;
+    container.innerHTML = splits.map(s => {
+      const done = doneSplits.has(s.id);
+      const isMissing = !done;
+      let cls = 'week-badge' + (done ? ' done' : (isMissing && isRed ? ' urgent' : (isMissing && isWarn ? ' warn' : '')));
+      const color = done ? 'var(--good)' : (isMissing && isRed ? 'var(--bad)' : (isMissing && isWarn ? 'var(--warn)' : (SPLIT_COLORS[s.id] || 'var(--text-3)')));
+      return '<div class="' + cls + '">'
+        + '<span class="week-badge-icon" style="color:' + color + '">' + (done ? '✓' : '○') + '</span>'
+        + '<span>' + escape(s.name) + '</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  // ── Split picker ─────────────────────────────────────────────
+  function openSplitPicker() {
+    const dk = wtDateKey(gymViewDate);
+    const current = dayAssignments[dk];
+    const allOptions = [...state.days, { id: 'rest', name: 'Descanso' }];
+    $('splitPickerOptions').innerHTML = allOptions.map(s => {
+      const color = SPLIT_COLORS[s.id] || '#6B7280';
+      return '<button class="split-picker-btn' + (s.id === current ? ' active' : '') + '" data-split="' + s.id + '">'
+        + '<span class="split-picker-dot" style="background:' + color + '"></span>'
+        + escape(s.name) + '</button>';
+    }).join('');
+    $('splitPickerOptions').querySelectorAll('.split-picker-btn').forEach(btn => {
+      btn.addEventListener('click', () => { assignDay(wtDateKey(gymViewDate), btn.dataset.split); closeSplitPicker(); });
+    });
+    $('splitPickerBg').classList.add('show');
+  }
+  function closeSplitPicker() { $('splitPickerBg').classList.remove('show'); }
+  $('splitPickerCancel').addEventListener('click', closeSplitPicker);
+  $('splitPickerBg').addEventListener('click', e => { if (e.target === $('splitPickerBg')) closeSplitPicker(); });
 
   function logsByDay() {
     const byDay = {};
@@ -2259,10 +2425,7 @@ img, video, canvas, svg { max-width: 100%; }
     renderDayPill();
     renderTodaysWorkout();
   });
-  $('dayPill').addEventListener('click', () => {
-    if (!isGymToday()) { gymViewDate = new Date(); renderDayPill(); renderTodaysWorkout(); }
-    else openRotationModal();
-  });
+  $('dayPill').addEventListener('click', () => openSplitPicker());
   $('poTwPastToggle').addEventListener('click', () => {
     const body = $('poTwPastBody');
     const toggle = $('poTwPastToggle');
@@ -3348,7 +3511,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos'];
+  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', 'gym_day_assignments'];
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -3408,6 +3571,7 @@ img, video, canvas, svg { max-width: 100%; }
     // in-memory copies from before the remote pull.
     try { state = loadState(); } catch {}
     try { wtEntries = wtLoad(); } catch {}
+    try { dayAssignments = loadDayAssignments(); } catch {}
     try {
       const raw = localStorage.getItem(PHOTO_KEY);
       photos = raw ? JSON.parse(raw) : [];
@@ -3552,6 +3716,15 @@ img, video, canvas, svg { max-width: 100%; }
   });
 })();
 </script>
+
+<!-- Split picker bottom sheet -->
+<div class="split-picker-bg" id="splitPickerBg">
+  <div class="split-picker">
+    <div class="split-picker-title">¿Qué entrenas?</div>
+    <div class="split-picker-options" id="splitPickerOptions"></div>
+    <button class="split-picker-cancel" id="splitPickerCancel">Cancelar</button>
+  </div>
+</div>
 
 </body>
 </html>

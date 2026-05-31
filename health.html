@@ -448,6 +448,66 @@ main {
   .stack-search-results { width: 100%; }
 }
 
+/* ── Health Metrics (steps + sleep) ──────────────────────── */
+.hm-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px; padding: 20px 20px 18px;
+  margin-bottom: 14px;
+}
+.hm-eyebrow {
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px;
+}
+.hm-big {
+  font-size: 52px; font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.hm-unit { font-size: 18px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+.hm-bar-track {
+  height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06);
+  margin: 14px 0 6px; overflow: hidden;
+}
+.hm-bar-fill {
+  height: 100%; border-radius: 4px; transition: width 0.5s ease;
+}
+.hm-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono);
+}
+.hm-steps-fill { background: linear-gradient(90deg, #7DD3FC, #6ee7b7); }
+.hm-msg { font-size: 13px; color: var(--text-secondary); margin-top: 12px; line-height: 1.4; }
+.hm-msg strong { color: var(--text-primary); }
+.hm-cycles-row { display: flex; gap: 5px; margin: 14px 0 10px; }
+.hm-cycle {
+  flex: 1; height: 10px; border-radius: 3px;
+  background: rgba(255,255,255,0.07);
+}
+.hm-cycle.full { background: linear-gradient(90deg, #818CF8, #A78BFA); }
+.hm-cycle.partial {
+  background: linear-gradient(90deg, rgba(129,140,248,0.35), rgba(167,139,250,0.35));
+}
+.hm-sleep-fill { background: linear-gradient(90deg, #818CF8, #A78BFA); }
+.hm-bedtimes {
+  display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;
+}
+.hm-bedtime-pill {
+  flex: 1; min-width: 120px;
+  background: rgba(129,140,248,0.08);
+  border: 1px solid rgba(129,140,248,0.20);
+  border-radius: 10px; padding: 10px 12px;
+}
+.hm-bedtime-label {
+  font-size: 9px; letter-spacing: 0.16em; font-weight: 700;
+  color: rgba(129,140,248,0.8); text-transform: uppercase; margin-bottom: 4px;
+}
+.hm-bedtime-time { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.hm-bedtime-sub { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+.hm-no-data {
+  font-size: 12px; color: var(--text-secondary); font-style: italic;
+  padding: 8px 0; text-align: center;
+}
+
 ::selection { background: rgba(224, 118, 88, 0.3); color: var(--text-primary); }
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -501,6 +561,48 @@ main {
   </div>
 
   <div class="attribution">// editable template · all data stays in your browser</div>
+
+  <!-- ── Steps ── -->
+  <div class="section-title" style="margin-top:22px">Pasos diarios</div>
+  <div class="hm-card" id="hmStepsCard">
+    <div class="hm-eyebrow">HOY</div>
+    <div>
+      <span class="hm-big" id="hmStepsNum">—</span>
+      <span class="hm-unit">pasos</span>
+    </div>
+    <div class="hm-bar-track"><div class="hm-bar-fill hm-steps-fill" id="hmStepsBar" style="width:0%"></div></div>
+    <div class="hm-bar-labels"><span>0</span><span id="hmStepsGoalLabel">10 000</span></div>
+    <div class="hm-msg" id="hmStepsMsg"><em class="hm-no-data">Conecta Apple Health vía Shortcuts para ver tus pasos aquí.</em></div>
+  </div>
+
+  <!-- ── Sleep ── -->
+  <div class="section-title">Sueño</div>
+  <div class="hm-card" id="hmSleepCard">
+    <div class="hm-eyebrow">ANOCHE</div>
+    <div>
+      <span class="hm-big" id="hmSleepNum">—</span>
+      <span class="hm-unit" id="hmSleepUnit">h</span>
+    </div>
+    <div class="hm-cycles-row" id="hmCyclesRow">
+      <div class="hm-cycle"></div><div class="hm-cycle"></div><div class="hm-cycle"></div>
+      <div class="hm-cycle"></div><div class="hm-cycle"></div><div class="hm-cycle"></div>
+    </div>
+    <div class="hm-bar-track"><div class="hm-bar-fill hm-sleep-fill" id="hmSleepBar" style="width:0%"></div></div>
+    <div class="hm-bar-labels"><span>0h</span><span>9h (6 ciclos)</span></div>
+    <div class="hm-msg" id="hmSleepMsg"><em class="hm-no-data">Conecta Apple Health vía Shortcuts para ver tu sueño aquí.</em></div>
+    <div class="hm-bedtimes" id="hmBedtimes">
+      <div class="hm-bedtime-pill">
+        <div class="hm-bedtime-label">5 ciclos · 7h 30 min</div>
+        <div class="hm-bedtime-time" id="hmBed5">—</div>
+        <div class="hm-bedtime-sub">hora para acostarte</div>
+      </div>
+      <div class="hm-bedtime-pill">
+        <div class="hm-bedtime-label">6 ciclos · 9h 00 min</div>
+        <div class="hm-bedtime-time" id="hmBed6">—</div>
+        <div class="hm-bedtime-sub">hora para acostarte</div>
+      </div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -1028,6 +1130,117 @@ document.addEventListener('DOMContentLoaded', function () {
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });
+</script>
+
+<script>
+(function () {
+  'use strict';
+  const SB_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
+  const SB_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
+  const STEP_GOAL = 10000;
+  const CYCLE_MIN = 90;    // minutes per sleep cycle
+  const CYCLES_MAX = 6;    // max cycles shown (9 h)
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // Bedtime = next-alarm time minus sleep duration, rounded back to tonight
+  function bedtime(cycleCount) {
+    const totalMin = cycleCount * CYCLE_MIN;
+    // Default wake target: 7:00 AM tomorrow
+    const wake = new Date();
+    wake.setDate(wake.getDate() + 1);
+    wake.setHours(7, 0, 0, 0);
+    const bed = new Date(wake.getTime() - totalMin * 60000);
+    return pad(bed.getHours()) + ':' + pad(bed.getMinutes());
+  }
+
+  function renderSteps(steps) {
+    const pct = Math.min(100, Math.round(steps / STEP_GOAL * 100));
+    document.getElementById('hmStepsNum').textContent = steps.toLocaleString('es-ES');
+    document.getElementById('hmStepsBar').style.width = pct + '%';
+    document.getElementById('hmStepsGoalLabel').textContent = STEP_GOAL.toLocaleString('es-ES');
+    let msg = '';
+    if (steps >= STEP_GOAL) {
+      msg = '<strong>🎯 Objetivo completado</strong> — ' + steps.toLocaleString('es-ES') + ' pasos hoy.';
+    } else {
+      const left = STEP_GOAL - steps;
+      msg = '<strong>' + left.toLocaleString('es-ES') + ' pasos más</strong> para llegar al objetivo.';
+    }
+    document.getElementById('hmStepsMsg').innerHTML = msg;
+  }
+
+  function renderSleep(minutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    document.getElementById('hmSleepNum').textContent = h + (m > 0 ? ('h ' + pad(m)) : 'h');
+    document.getElementById('hmSleepUnit').textContent = m > 0 ? 'min' : '';
+
+    // Sleep bar: 9h = 100%
+    const pct = Math.min(100, Math.round(minutes / (CYCLES_MAX * CYCLE_MIN) * 100));
+    document.getElementById('hmSleepBar').style.width = pct + '%';
+
+    // Cycles
+    const completeCycles = Math.floor(minutes / CYCLE_MIN);
+    const partialMin = minutes % CYCLE_MIN;
+    const hasPartial = partialMin > 0 && completeCycles < CYCLES_MAX;
+    const cycleEls = document.getElementById('hmCyclesRow').children;
+    for (let i = 0; i < CYCLES_MAX; i++) {
+      cycleEls[i].className = 'hm-cycle';
+      if (i < completeCycles) cycleEls[i].classList.add('full');
+      else if (i === completeCycles && hasPartial) cycleEls[i].classList.add('partial');
+    }
+
+    // Message
+    const nextCycle = CYCLE_MIN - partialMin;
+    let msg = '';
+    if (completeCycles >= 6) {
+      msg = '🌟 <strong>6 ciclos completos (9h)</strong> — recuperación máxima.';
+    } else if (completeCycles >= 5 && partialMin === 0) {
+      msg = '✅ <strong>5 ciclos completos (7h 30min)</strong> — objetivo mínimo logrado.';
+    } else if (completeCycles >= 5) {
+      msg = '✅ <strong>' + completeCycles + ' ciclos</strong> — te faltan <strong>' + nextCycle + ' min</strong> para el ciclo ' + (completeCycles + 1) + '.';
+    } else if (completeCycles >= 4) {
+      msg = '⚠️ <strong>' + completeCycles + ' ciclos</strong> — te faltan <strong>' + nextCycle + ' min</strong> para los 5 ciclos mínimos.';
+    } else {
+      msg = '🔴 <strong>' + completeCycles + ' ciclos</strong> — sueño insuficiente. Intenta al menos 7h 30min.';
+    }
+    document.getElementById('hmSleepMsg').innerHTML = msg;
+
+    // Bedtimes for tonight
+    document.getElementById('hmBed5').textContent = bedtime(5);
+    document.getElementById('hmBed6').textContent = bedtime(6);
+  }
+
+  async function loadHealthMetrics() {
+    try {
+      const today = todayStr();
+      const yesterday = new Date(Date.now() - 86400000);
+      const yd = yesterday.getFullYear() + '-' + pad(yesterday.getMonth() + 1) + '-' + pad(yesterday.getDate());
+      const res = await fetch(
+        SB_URL + '/rest/v1/health_metrics?date=in.(' + today + ',' + yd + ')&order=date.desc&limit=2',
+        { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      const todayRow = rows.find(r => r.date === today);
+      const ydRow    = rows.find(r => r.date === yd);
+      if (todayRow && todayRow.steps > 0)       renderSteps(todayRow.steps);
+      if (ydRow    && ydRow.sleep_minutes > 0)  renderSleep(ydRow.sleep_minutes);
+      else if (todayRow && todayRow.sleep_minutes > 0) renderSleep(todayRow.sleep_minutes);
+    } catch (e) {}
+  }
+
+  // Always show tonight's bedtime targets even without data
+  document.getElementById('hmBed5').textContent = bedtime(5);
+  document.getElementById('hmBed6').textContent = bedtime(6);
+
+  loadHealthMetrics();
+})();
 </script>
 
 </body>

@@ -1738,6 +1738,15 @@ img, video, canvas, svg { max-width: 100%; }
   </div>
 </div>
 
+<!-- Split picker bottom sheet -->
+<div class="split-picker-bg" id="splitPickerBg">
+  <div class="split-picker">
+    <div class="split-picker-title">¿Qué entrenas?</div>
+    <div class="split-picker-options" id="splitPickerOptions"></div>
+    <button class="split-picker-cancel" id="splitPickerCancel">Cancelar</button>
+  </div>
+</div>
+
 <!-- Rotation editor modal -->
 <div class="po-modal-bg" id="rotModalBg">
   <div class="po-modal">
@@ -1821,7 +1830,11 @@ img, video, canvas, svg { max-width: 100%; }
     s = s || {};
     s.units = s.units || CONFIG.units || 'kg';
     s.gyms  = (Array.isArray(s.gyms)  && s.gyms.length)  ? s.gyms  : CONFIG.gyms.slice();
-    s.days  = (Array.isArray(s.days)  && s.days.length)  ? s.days  : CONFIG.days.slice();
+    // If saved days don't include all CONFIG days (e.g. old data missing 'estetica'), reset to CONFIG
+    const savedDayIds = Array.isArray(s.days) ? s.days.map(d => d.id) : [];
+    const allConfigDayIds = CONFIG.days.map(d => d.id);
+    const missingDays = allConfigDayIds.some(id => !savedDayIds.includes(id));
+    s.days = (Array.isArray(s.days) && s.days.length && !missingDays) ? s.days : CONFIG.days.slice();
     s.exercises = Array.isArray(s.exercises) ? s.exercises : buildDefaultExercises();
     s.logs = (s.logs && typeof s.logs === 'object') ? s.logs : {};
     s.filterGym = s.filterGym || s.gyms[0].id;
@@ -3739,14 +3752,6 @@ img, video, canvas, svg { max-width: 100%; }
 })();
 </script>
 
-<!-- Split picker bottom sheet -->
-<div class="split-picker-bg" id="splitPickerBg">
-  <div class="split-picker">
-    <div class="split-picker-title">¿Qué entrenas?</div>
-    <div class="split-picker-options" id="splitPickerOptions"></div>
-    <button class="split-picker-cancel" id="splitPickerCancel">Cancelar</button>
-  </div>
-</div>
 
 </body>
 </html>

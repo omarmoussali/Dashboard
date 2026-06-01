@@ -23,15 +23,16 @@
   position: sticky; top: 0; z-index: 40;
   display: flex; gap: 6px;
   padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
-  /* Fully opaque so each page's body background can't bleed through
-     and tint the bar a different color. Matches the dashboard's base
-     dark background so the bar feels continuous with the page chrome. */
   background: #0a0a0b;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.topbar::-webkit-scrollbar { display: none; }
 .topbar-pill {
-  flex: 1 1 0; min-width: 0;
+  flex: 0 0 auto;
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.04);
@@ -71,7 +72,7 @@
   white-space: nowrap;
 }
 .topbar-water-wrap {
-  flex: 1 1 0; min-width: 0;
+  flex: 0 0 auto;
   display: flex;
 }
 .topbar-water-pill {

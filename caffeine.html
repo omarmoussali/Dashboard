@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Caffeine</title>
+<script src="lock.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --success: #6BE3A4;
+  --warning: #F2C063;
+  --danger: #FF6B6B;
+  --accent: #C9A36B;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: #050506;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(60px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(224, 118, 88, 0.16), transparent 45%),
+    radial-gradient(circle at 18% 90%, rgba(180, 180, 200, 0.06), transparent 50%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: -2;
+  animation: drift 36s ease-in-out infinite alternate;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes drift {
+  0%   { transform: translate3d(0,0,0); }
+  100% { transform: translate3d(-22px, 14px, 0); }
+}
+
+.page { max-width: 760px; margin: 0 auto; }
+
+.dash-title {
+  margin: 0 0 16px;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.025em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+@media (max-width: 480px) { .dash-title { font-size: 22px; } }
+
+/* ===== section + glass card (shared design system) ===== */
+.section { margin-top: 8px; }
+.section-title {
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+.section-title::before {
+  content: ''; width: 18px; height: 1px;
+  background: var(--text-tertiary); opacity: 0.6;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+}
+
+.gm-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+.gm-eyebrow {
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+/* ===== Your Day: ring + curve ===== */
+.cf-day-top {
+  display: flex; align-items: center; gap: 22px;
+  flex-wrap: wrap;
+}
+.cf-ring { position: relative; width: 132px; height: 132px; flex-shrink: 0; }
+.cf-ring svg { width: 100%; height: 100%; display: block; }
+.cf-ring-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 9; }
+.cf-ring-fill {
+  fill: none; stroke-width: 9; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 60px 60px;
+  transition: stroke 0.5s ease, stroke-dashoffset 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.cf-ring-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.cf-ring-score { font-size: 38px; font-weight: 800; letter-spacing: -0.04em; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; }
+.cf-ring-word { margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.cf-ring-when { margin-top: 3px; font-family: var(--font-mono); font-size: 8.5px; font-weight: 800; letter-spacing: 0.16em; color: var(--text-tertiary); }
+.cf-day-aside { flex: 1; min-width: 180px; }
+.cf-day-headline { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.cf-day-hint { font-size: 12px; color: var(--text-tertiary); }
+
+.cf-modes { display: inline-flex; gap: 4px; margin: 16px 0 8px; padding: 3px; border-radius: 11px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); }
+.cf-mode {
+  border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 6px 12px; border-radius: 8px;
+  transition: background 0.18s, color 0.18s;
+}
+.cf-mode.is-active { background: rgba(201,163,107,0.16); color: var(--accent); }
+
+.cf-chart { position: relative; width: 100%; }
+.cf-chart svg { width: 100%; height: auto; display: block; touch-action: none; }
+.cf-axis-label { font-family: var(--font-mono); font-size: 9px; fill: var(--text-tertiary); }
+
+.cf-band {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-top: 14px;
+}
+.cf-band-cell {
+  padding: 11px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.cf-band-k { font-family: var(--font-mono); font-size: 8.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 5px; }
+.cf-band-v { font-size: 14px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .cf-band { grid-template-columns: 1fr; } }
+
+/* ===== Smart Timing tiles ===== */
+.cf-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 560px) { .cf-tiles { grid-template-columns: 1fr; } }
+.cf-tile {
+  position: relative; padding: 16px; border-radius: 14px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.cf-tile::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, var(--tile-accent, rgba(201,163,107,0.14)), transparent 62%);
+  opacity: 0.5; pointer-events: none;
+}
+.cf-tile-icon { font-size: 18px; }
+.cf-tile-k { font-family: var(--font-mono); font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); margin: 8px 0 6px; }
+.cf-tile-v { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.cf-tile-sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 6px; }
+
+.cf-tips { list-style: none; margin: 0; padding: 0; }
+.cf-tip {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 11px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px; color: var(--text-secondary); line-height: 1.45;
+}
+.cf-tip:first-child { border-top: 0; }
+.cf-tip-ic { flex-shrink: 0; font-size: 14px; line-height: 1.4; }
+
+/* ===== Today: mg bar ===== */
+.cf-mg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.cf-mg-now { display: flex; align-items: baseline; gap: 6px; }
+.cf-mg-num { font-size: 40px; font-weight: 800; letter-spacing: -0.04em; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; }
+.cf-mg-unit { font-family: var(--font-mono); font-size: 14px; color: var(--text-tertiary); }
+.cf-mg-limit { font-family: var(--font-mono); font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.cf-bar { position: relative; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.cf-bar-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; transition: width 0.6s cubic-bezier(0.22,1,0.36,1), background 0.4s; }
+.cf-mg-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.cf-active { font-size: 12.5px; color: var(--text-secondary); }
+.cf-active b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.cf-note { font-size: 12px; color: var(--text-tertiary); margin-top: 10px; line-height: 1.5; }
+
+/* ===== Log a drink: search ===== */
+.cf-search-wrap { position: relative; }
+.cf-search {
+  width: 100%; padding: 13px 14px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: var(--font); font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.cf-search:focus { border-color: rgba(201,163,107,0.5); }
+.cf-search::placeholder { color: var(--text-tertiary); }
+.cf-results {
+  margin-top: 8px;
+  max-height: 290px; overflow-y: auto;
+  border-radius: 12px;
+}
+.cf-result {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left;
+  padding: 11px 12px; margin-bottom: 6px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 11px;
+  color: var(--text-primary);
+  font-family: var(--font); font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.06s;
+}
+.cf-result:hover { background: rgba(255,255,255,0.06); border-color: rgba(201,163,107,0.35); }
+.cf-result:active { transform: scale(0.99); }
+.cf-result-emoji { font-size: 19px; flex-shrink: 0; }
+.cf-result-name { flex: 1; font-weight: 600; }
+.cf-result-cat { font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.cf-result-mg { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.cf-result.is-custom .cf-result-cat { color: var(--accent); }
+.cf-empty { text-align: center; font-size: 12px; font-style: italic; color: var(--text-tertiary); padding: 16px; }
+
+.cf-custom { margin-top: 12px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+.cf-custom-row { display: flex; gap: 8px; }
+.cf-custom-row input {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px; color: var(--text-primary);
+  font-family: var(--font); font-size: 14px; padding: 10px 12px; outline: none;
+}
+.cf-custom-row input:focus { border-color: rgba(201,163,107,0.5); }
+.cf-custom-name { flex: 1; min-width: 0; }
+.cf-custom-mg { width: 92px; font-variant-numeric: tabular-nums; }
+.cf-btn {
+  border: 0; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 700;
+  padding: 10px 16px; border-radius: 10px;
+  background: var(--accent); color: #1a1208;
+  transition: filter 0.15s, transform 0.06s;
+}
+.cf-btn:hover { filter: brightness(1.08); }
+.cf-btn:active { transform: scale(0.97); }
+.cf-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== Logged today ===== */
+.cf-log-list { list-style: none; margin: 0; padding: 0; }
+.cf-log-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.cf-log-row:first-child { border-top: 0; }
+.cf-log-emoji { font-size: 20px; flex-shrink: 0; }
+.cf-log-main { flex: 1; min-width: 0; }
+.cf-log-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.cf-log-name b { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+.cf-log-times { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.cf-log-times span b { color: var(--text-secondary); font-weight: 600; }
+.cf-log-when { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cf-del {
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-size: 17px; cursor: pointer; padding: 2px 6px; border-radius: 6px;
+  opacity: 0.5; transition: opacity 0.2s, color 0.2s; flex-shrink: 0;
+}
+.cf-del:hover { opacity: 1; color: var(--danger); }
+.cf-log-empty { text-align: center; font-size: 12px; font-style: italic; color: var(--text-tertiary); padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1 class="dash-title">Caffeine</h1>
+
+  <!-- ============ 1) YOUR DAY ============ -->
+  <div class="section">
+    <div class="section-title">Your Day</div>
+    <div class="gm-card">
+      <div class="cf-day-top">
+        <div class="cf-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="cf-ring-track" cx="60" cy="60" r="52"></circle>
+            <circle class="cf-ring-fill" id="cfRingFill" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="cf-ring-overlay">
+            <div class="cf-ring-score" id="cfRingScore">—</div>
+            <div class="cf-ring-word" id="cfRingWord">—</div>
+            <div class="cf-ring-when" id="cfRingWhen">RIGHT NOW</div>
+          </div>
+        </div>
+        <div class="cf-day-aside">
+          <div class="cf-day-headline" id="cfDayHeadline">Predicted energy</div>
+          <div class="cf-day-hint">Hover or drag the curve to see any hour.</div>
+          <div class="cf-modes" id="cfModes" role="tablist">
+            <button class="cf-mode is-active" data-mode="line">Line</button>
+            <button class="cf-mode" data-mode="bars">Bars</button>
+            <button class="cf-mode" data-mode="stack">Stack</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-chart" id="cfChart"></div>
+
+      <div class="cf-band">
+        <div class="cf-band-cell"><div class="cf-band-k">Peak focus window</div><div class="cf-band-v" id="cfBandPeak">—</div></div>
+        <div class="cf-band-cell"><div class="cf-band-k">Predicted crash</div><div class="cf-band-v" id="cfBandCrash">—</div></div>
+        <div class="cf-band-cell"><div class="cf-band-k">Last coffee by</div><div class="cf-band-v" id="cfBandCutoff">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2) SMART TIMING ============ -->
+  <div class="section">
+    <div class="section-title">Smart Timing</div>
+    <div class="gm-card">
+      <div class="cf-tiles">
+        <div class="cf-tile" style="--tile-accent:rgba(107,227,164,0.16)">
+          <div class="cf-tile-icon">🎯</div>
+          <div class="cf-tile-k">Most productive</div>
+          <div class="cf-tile-v" id="cfProdV">—</div>
+          <div class="cf-tile-sub" id="cfProdSub">—</div>
+        </div>
+        <div class="cf-tile" style="--tile-accent:rgba(255,107,107,0.16)">
+          <div class="cf-tile-icon">📉</div>
+          <div class="cf-tile-k">You'll crash</div>
+          <div class="cf-tile-v" id="cfCrashV">—</div>
+          <div class="cf-tile-sub" id="cfCrashSub">—</div>
+        </div>
+        <div class="cf-tile" style="--tile-accent:rgba(201,163,107,0.18)">
+          <div class="cf-tile-icon">☕</div>
+          <div class="cf-tile-k">Coffee cutoff</div>
+          <div class="cf-tile-v" id="cfCutV">—</div>
+          <div class="cf-tile-sub" id="cfCutSub">—</div>
+        </div>
+      </div>
+      <ul class="cf-tips" id="cfTips"></ul>
+    </div>
+  </div>
+
+  <!-- ============ 3) TODAY ============ -->
+  <div class="section">
+    <div class="section-title">Today</div>
+    <div class="gm-card">
+      <div class="cf-mg-head">
+        <div class="cf-mg-now">
+          <span class="cf-mg-num" id="cfMgNum">0</span>
+          <span class="cf-mg-unit">mg</span>
+        </div>
+        <span class="cf-mg-limit" id="cfMgLimit">/ — mg</span>
+      </div>
+      <div class="cf-bar"><div class="cf-bar-fill" id="cfBarFill"></div></div>
+      <div class="cf-mg-foot">
+        <span class="cf-active"><b id="cfActiveNow">0</b> mg active now</span>
+      </div>
+      <div class="cf-note" id="cfNote">—</div>
+    </div>
+  </div>
+
+  <!-- ============ 4) LOG A DRINK ============ -->
+  <div class="section">
+    <div class="section-title">Log a Drink</div>
+    <div class="gm-card">
+      <div class="cf-search-wrap">
+        <input class="cf-search" id="cfSearch" type="text" placeholder="Search coffee, tea, energy drinks…" autocomplete="off">
+        <div class="cf-results" id="cfResults"></div>
+      </div>
+      <div class="cf-custom">
+        <div class="gm-eyebrow">Add a custom drink</div>
+        <div class="cf-custom-row">
+          <input class="cf-custom-name" id="cfCustomName" type="text" placeholder="Name (e.g. My cortado)" autocomplete="off">
+          <input class="cf-custom-mg" id="cfCustomMg" type="number" inputmode="numeric" placeholder="mg" min="0" max="1000">
+          <button class="cf-btn" id="cfCustomAdd">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5) LOGGED TODAY ============ -->
+  <div class="section">
+    <div class="section-title">Logged Today</div>
+    <div class="gm-card">
+      <ul class="cf-log-list" id="cfLogList"></ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------
+  // Constants & model parameters
+  // ---------------------------------------------------------------
+  var HALF_LIFE = 5;      // caffeine half-life, hours
+  var FDA = 400;          // FDA ceiling, mg/day
+  var PEAK_MIN = 45;      // minutes to peak absorption (milestone)
+  var WAKE_H = 7;         // default wake hour (no WHOOP)
+  var BED_H = 23;         // default bedtime hour (no WHOOP)
+  var STEP = 1 / 6;       // 10-minute sampling
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------------------------------------------------------------
+  // Drink database (~60 researched drinks: mg caffeine + emoji)
+  // ---------------------------------------------------------------
+  var DRINKS = [
+    // Coffee
+    { name: 'Brewed coffee (8 oz)', mg: 95, emoji: '☕', cat: 'coffee' },
+    { name: 'Brewed coffee (12 oz)', mg: 145, emoji: '☕', cat: 'coffee' },
+    { name: 'Brewed coffee (16 oz)', mg: 195, emoji: '☕', cat: 'coffee' },
+    { name: 'Dark roast drip (8 oz)', mg: 90, emoji: '☕', cat: 'coffee' },
+    { name: 'Instant coffee (8 oz)', mg: 62, emoji: '☕', cat: 'coffee' },
+    { name: 'Decaf coffee (8 oz)', mg: 3, emoji: '☕', cat: 'coffee' },
+    { name: 'Cold brew (12 oz)', mg: 205, emoji: '🧊', cat: 'coffee' },
+    { name: 'Nitro cold brew (12 oz)', mg: 215, emoji: '🧊', cat: 'coffee' },
+    { name: 'Turkish coffee (2 oz)', mg: 50, emoji: '☕', cat: 'coffee' },
+    { name: 'Café au lait (8 oz)', mg: 75, emoji: '☕', cat: 'coffee' },
+    // Espresso
+    { name: 'Espresso (single)', mg: 64, emoji: '☕', cat: 'espresso' },
+    { name: 'Espresso (double)', mg: 128, emoji: '☕', cat: 'espresso' },
+    { name: 'Espresso macchiato', mg: 64, emoji: '☕', cat: 'espresso' },
+    { name: 'Cappuccino', mg: 64, emoji: '☕', cat: 'espresso' },
+    { name: 'Latte (single shot)', mg: 64, emoji: '☕', cat: 'espresso' },
+    { name: 'Latte (double shot)', mg: 128, emoji: '☕', cat: 'espresso' },
+    { name: 'Flat white', mg: 130, emoji: '☕', cat: 'espresso' },
+    { name: 'Americano (double)', mg: 128, emoji: '☕', cat: 'espresso' },
+    { name: 'Mocha (single shot)', mg: 90, emoji: '☕', cat: 'espresso' },
+    { name: 'Cortado', mg: 64, emoji: '☕', cat: 'espresso' },
+    // Tea
+    { name: 'Black tea (8 oz)', mg: 47, emoji: '🫖', cat: 'tea' },
+    { name: 'Green tea (8 oz)', mg: 28, emoji: '🍵', cat: 'tea' },
+    { name: 'White tea (8 oz)', mg: 25, emoji: '🍵', cat: 'tea' },
+    { name: 'Oolong tea (8 oz)', mg: 37, emoji: '🍵', cat: 'tea' },
+    { name: 'Matcha (1 tsp)', mg: 70, emoji: '🍵', cat: 'tea' },
+    { name: 'Chai latte (8 oz)', mg: 50, emoji: '🍵', cat: 'tea' },
+    { name: 'Earl Grey (8 oz)', mg: 40, emoji: '🫖', cat: 'tea' },
+    { name: 'Yerba mate (8 oz)', mg: 85, emoji: '🧉', cat: 'tea' },
+    { name: 'Iced tea (16 oz)', mg: 47, emoji: '🧊', cat: 'tea' },
+    { name: 'Herbal tea (8 oz)', mg: 0, emoji: '🍵', cat: 'tea' },
+    // Energy drinks
+    { name: 'Red Bull (8.4 oz)', mg: 80, emoji: '🐂', cat: 'energy' },
+    { name: 'Red Bull (12 oz)', mg: 114, emoji: '🐂', cat: 'energy' },
+    { name: 'Monster (16 oz)', mg: 160, emoji: '👹', cat: 'energy' },
+    { name: 'Rockstar (16 oz)', mg: 160, emoji: '🤘', cat: 'energy' },
+    { name: 'Bang (16 oz)', mg: 300, emoji: '💥', cat: 'energy' },
+    { name: 'Reign (16 oz)', mg: 300, emoji: '⚡', cat: 'energy' },
+    { name: 'Celsius (12 oz)', mg: 200, emoji: '🔥', cat: 'energy' },
+    { name: '5-Hour Energy (1.93 oz)', mg: 200, emoji: '⏱️', cat: 'energy' },
+    { name: 'NOS (16 oz)', mg: 160, emoji: '🏁', cat: 'energy' },
+    { name: 'Ghost Energy (16 oz)', mg: 200, emoji: '👻', cat: 'energy' },
+    { name: 'Prime Energy (12 oz)', mg: 200, emoji: '🧃', cat: 'energy' },
+    { name: 'C4 Energy (16 oz)', mg: 200, emoji: '💪', cat: 'energy' },
+    // Soda
+    { name: 'Coca-Cola (12 oz)', mg: 34, emoji: '🥤', cat: 'soda' },
+    { name: 'Diet Coke (12 oz)', mg: 46, emoji: '🥤', cat: 'soda' },
+    { name: 'Coke Zero (12 oz)', mg: 34, emoji: '🥤', cat: 'soda' },
+    { name: 'Pepsi (12 oz)', mg: 38, emoji: '🥤', cat: 'soda' },
+    { name: 'Pepsi Max (12 oz)', mg: 69, emoji: '🥤', cat: 'soda' },
+    { name: 'Mountain Dew (12 oz)', mg: 54, emoji: '🥤', cat: 'soda' },
+    { name: 'Dr Pepper (12 oz)', mg: 42, emoji: '🥤', cat: 'soda' },
+    { name: "Barq's Root Beer (12 oz)", mg: 22, emoji: '🥤', cat: 'soda' },
+    { name: 'Sunkist (12 oz)', mg: 19, emoji: '🥤', cat: 'soda' },
+    { name: 'Mello Yello (12 oz)', mg: 51, emoji: '🥤', cat: 'soda' },
+    // Pre-workout
+    { name: 'Pre-workout (avg scoop)', mg: 200, emoji: '🏋️', cat: 'pre-workout' },
+    { name: 'C4 Original (1 scoop)', mg: 150, emoji: '🏋️', cat: 'pre-workout' },
+    { name: 'Pre JYM (1 scoop)', mg: 300, emoji: '🏋️', cat: 'pre-workout' },
+    { name: 'Total War (1 scoop)', mg: 320, emoji: '🏋️', cat: 'pre-workout' },
+    { name: 'Gorilla Mode (1 scoop)', mg: 175, emoji: '🦍', cat: 'pre-workout' },
+    // Chocolate
+    { name: 'Dark chocolate (1 oz)', mg: 24, emoji: '🍫', cat: 'chocolate' },
+    { name: 'Milk chocolate (1 oz)', mg: 6, emoji: '🍫', cat: 'chocolate' },
+    { name: 'Hot chocolate (8 oz)', mg: 5, emoji: '☕', cat: 'chocolate' },
+    { name: 'Cocoa powder (1 tbsp)', mg: 12, emoji: '🍫', cat: 'chocolate' },
+    { name: 'Choc-covered espresso beans (1 oz)', mg: 70, emoji: '🍫', cat: 'chocolate' }
+  ];
+
+  // ---------------------------------------------------------------
+  // State + persistence
+  // ---------------------------------------------------------------
+  var LOGS_KEY = 'caf:logs';     // { 'YYYY-MM-DD': [ {id,name,mg,emoji,t} ] }
+  var CUSTOM_KEY = 'caf:custom'; // [ {name,mg,emoji} ]
+  var logs = {}, custom = [];
+  var mode = 'line';
+  var scrubT = null; // null = follow "now"
+
+  function loadJSON(key, fallback) {
+    try { var raw = localStorage.getItem(key); if (raw) return JSON.parse(raw); } catch (e) {}
+    return fallback;
+  }
+  function load() {
+    var L = loadJSON(LOGS_KEY, {}); logs = (L && typeof L === 'object' && !Array.isArray(L)) ? L : {};
+    var C = loadJSON(CUSTOM_KEY, []); custom = Array.isArray(C) ? C : [];
+  }
+  function saveLogs() { try { localStorage.setItem(LOGS_KEY, JSON.stringify(logs)); } catch (e) {} }
+  function saveCustom() { try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); } catch (e) {} }
+
+  // ---------------------------------------------------------------
+  // Date / time helpers
+  // ---------------------------------------------------------------
+  function dateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function todayKey() { return dateKey(new Date()); }
+  function midnightMs() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function hourOfNow() { return (Date.now() - midnightMs()) / 3600000; }
+  function fmtClock(t) { // t in hours [0,24) -> "7:05 AM"
+    t = ((t % 24) + 24) % 24;
+    var h = Math.floor(t), m = Math.round((t - h) * 60);
+    if (m === 60) { m = 0; h = (h + 1) % 24; }
+    var ap = h < 12 ? 'AM' : 'PM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + String(m).padStart(2, '0') + ' ' + ap;
+  }
+  function fmtClockMs(ms) { var d = new Date(ms); return fmtClock(d.getHours() + d.getMinutes() / 60); }
+
+  // All doses relevant to today's 0..24h window (yesterday's late ones still decay in).
+  function activeDoses() {
+    var out = [];
+    var tk = todayKey();
+    var y = new Date(); y.setDate(y.getDate() - 1);
+    [dateKey(y), tk].forEach(function (k) {
+      (logs[k] || []).forEach(function (e) { if (e && e.mg > 0 && e.t) out.push(e); });
+    });
+    return out;
+  }
+  function todayEntries() { return (logs[todayKey()] || []).slice(); }
+
+  // ---------------------------------------------------------------
+  // Pharmacokinetics
+  // ---------------------------------------------------------------
+  function activeOf(dose, hoursSince) {
+    if (hoursSince < 0) return 0;
+    return dose * Math.pow(0.5, hoursSince / HALF_LIFE);
+  }
+  // Total active caffeine (mg) at an absolute time (ms).
+  function totalActiveAt(ms) {
+    var doses = activeDoses(), sum = 0;
+    for (var i = 0; i < doses.length; i++) {
+      sum += activeOf(doses[i].mg, (ms - doses[i].t) / 3600000);
+    }
+    return sum;
+  }
+
+  // ---------------------------------------------------------------
+  // Energy model (0..100)
+  // ---------------------------------------------------------------
+  function gauss(x, mu, sd) { return Math.exp(-((x - mu) * (x - mu)) / (2 * sd * sd)); }
+  function circadian(t) { return 50 + 18 * Math.cos((2 * Math.PI * (t - 16.5)) / 24); }
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+  // Returns { energy, baseline, caf, asleep } for hour t (0..24).
+  function energyAt(t) {
+    var circ = circadian(t);
+    var asleep = (t < WAKE_H || t >= BED_H);
+    if (asleep) {
+      var e = clamp(circ - 34, 3, 20);
+      return { energy: e, baseline: e, caf: 0, asleep: true };
+    }
+    var lunch = 10 * gauss(t, 14, 1.4);
+    var hoursAwake = clamp(t - WAKE_H, 0, 24);
+    var pressure = hoursAwake * 1.7;
+    var morning = 10 * gauss(t - WAKE_H, 1.2, 0.9);
+    var sampleMs = midnightMs() + t * 3600000;
+    var activeMg = totalActiveAt(sampleMs);
+    var boost = 34 * (1 - Math.exp(-activeMg / 110));
+    var base = circ - lunch - pressure + morning;
+    var full = base + boost;
+    var baseC = clamp(base, 0, 100);
+    var energy = clamp(full, 0, 100);
+    return { energy: energy, baseline: baseC, caf: Math.max(0, energy - baseC), asleep: false };
+  }
+
+  // Build 10-min samples across the day. Recomputed whenever logs change.
+  var SAMPLES = [];
+  function buildSamples() {
+    SAMPLES = [];
+    for (var t = 0; t <= 24 + 1e-9; t += STEP) {
+      var r = energyAt(t);
+      SAMPLES.push({ t: t, energy: r.energy, baseline: r.baseline, caf: r.caf, asleep: r.asleep });
+    }
+  }
+  function sampleAt(t) {
+    var idx = Math.round(t / STEP);
+    idx = clamp(idx, 0, SAMPLES.length - 1);
+    return SAMPLES[idx];
+  }
+
+  // ---------------------------------------------------------------
+  // Score -> color / word
+  // ---------------------------------------------------------------
+  function colorFor(s) { return s >= 62 ? 'var(--success)' : (s >= 40 ? 'var(--warning)' : 'var(--danger)'); }
+  function hexFor(s) { return s >= 62 ? '#6BE3A4' : (s >= 40 ? '#F2C063' : '#FF6B6B'); }
+  function wordFor(s) {
+    if (s >= 78) return 'Peak';
+    if (s >= 62) return 'High';
+    if (s >= 46) return 'Steady';
+    if (s >= 32) return 'Dip';
+    return 'Low';
+  }
+
+  // ---------------------------------------------------------------
+  // Body weight -> personalized targets
+  // ---------------------------------------------------------------
+  function weightKg() {
+    var pw = loadJSON('po_water_v1', null);
+    if (pw && pw.profile && typeof pw.profile.weightKg === 'number') {
+      var w = pw.profile.weightKg;
+      if (pw.weightUnit === 'lb') w = w / 2.20462;
+      if (w > 20 && w < 400) return { kg: w, set: true };
+    }
+    return { kg: 75, set: false };
+  }
+  function targets() {
+    var w = weightKg();
+    var target = Math.round(3 * w.kg);        // ≈3 mg/kg recommended
+    var limit = clamp(target, 100, FDA);      // personal daily limit for the bar
+    return { kg: w.kg, set: w.set, target: target, limit: limit, ceiling: FDA };
+  }
+
+  // ---------------------------------------------------------------
+  // Analysis: peak window, crash, cutoff
+  // ---------------------------------------------------------------
+  function awakeRange() { return { a: WAKE_H, b: BED_H }; }
+
+  function peakInfo() {
+    var r = awakeRange(), best = null;
+    for (var i = 0; i < SAMPLES.length; i++) {
+      var s = SAMPLES[i];
+      if (s.t < r.a || s.t > r.b) continue;
+      if (!best || s.energy > best.energy) best = s;
+    }
+    if (!best) return null;
+    // expand window while energy stays within 8 of the peak
+    var lo = best.t, hi = best.t, thr = best.energy - 8;
+    for (var j = 0; j < SAMPLES.length; j++) {
+      var sj = SAMPLES[j];
+      if (sj.t < r.a || sj.t > r.b) continue;
+      if (sj.energy >= thr) { if (sj.t < lo) lo = sj.t; if (sj.t > hi) hi = sj.t; }
+    }
+    return { t: best.t, score: Math.round(best.energy), lo: lo, hi: hi };
+  }
+
+  // Steepest sustained drop within the next `hrs` hours from `fromT`.
+  function crashInfo(fromT, hrs) {
+    var startT = Math.max(fromT, WAKE_H);
+    var endLimit = Math.min(fromT + hrs, BED_H);
+    if (endLimit - startT < 1) return null;
+    var best = null;
+    for (var i = 0; i < SAMPLES.length; i++) {
+      var a = SAMPLES[i];
+      if (a.t < startT || a.t > endLimit - 1) continue;
+      // find the lowest point at least 1h after a, within window
+      var low = null;
+      for (var j = i + 1; j < SAMPLES.length; j++) {
+        var b = SAMPLES[j];
+        if (b.t > endLimit) break;
+        if (b.t - a.t < 1) continue;
+        if (!low || b.energy < low.energy) low = b;
+      }
+      if (!low) continue;
+      var drop = a.energy - low.energy;
+      if (!best || drop > best.drop) best = { drop: drop, from: a, to: low };
+    }
+    if (!best || best.drop < 12) return null; // not significant
+    return { t: best.to.t, low: Math.round(best.to.energy), drop: Math.round(best.drop) };
+  }
+
+  function coffeeCutoff() {
+    // bedtime - 5*log2(95/30): a ~95 mg coffee decays under 30 mg by bedtime
+    return BED_H - HALF_LIFE * (Math.log(95 / 30) / Math.LN2);
+  }
+
+  // ---------------------------------------------------------------
+  // SVG energy chart
+  // ---------------------------------------------------------------
+  var VW = 720, VH = 220, PADL = 10, PADR = 10, PADT = 14, PADB = 22;
+  var PW = VW - PADL - PADR, PH = VH - PADT - PADB;
+  function X(t) { return PADL + (t / 24) * PW; }
+  function Y(s) { return PADT + (1 - s / 100) * PH; }
+
+  function linePath(key) {
+    var d = '';
+    for (var i = 0; i < SAMPLES.length; i++) {
+      d += (i === 0 ? 'M' : 'L') + X(SAMPLES[i].t).toFixed(1) + ' ' + Y(SAMPLES[i][key]).toFixed(1) + ' ';
+    }
+    return d.trim();
+  }
+  function areaPath(key) {
+    return linePath(key) + ' L' + X(24).toFixed(1) + ' ' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ' ' + Y(0).toFixed(1) + ' Z';
+  }
+  // Band between baseline and energy (caffeine contribution) for STACK mode.
+  function bandPath() {
+    var d = '';
+    var i;
+    for (i = 0; i < SAMPLES.length; i++) {
+      d += (i === 0 ? 'M' : 'L') + X(SAMPLES[i].t).toFixed(1) + ' ' + Y(SAMPLES[i].energy).toFixed(1) + ' ';
+    }
+    for (i = SAMPLES.length - 1; i >= 0; i--) {
+      d += 'L' + X(SAMPLES[i].t).toFixed(1) + ' ' + Y(SAMPLES[i].baseline).toFixed(1) + ' ';
+    }
+    return d.trim() + ' Z';
+  }
+  function barsSvg() {
+    var out = '', stepBars = 0.5; // 30-min bars
+    for (var t = 0; t < 24; t += stepBars) {
+      var s = sampleAt(t + stepBars / 2);
+      var bx = X(t) + 1.5, bw = (PW / 48) - 3;
+      var by = Y(s.energy), bh = Y(0) - by;
+      out += '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + bw.toFixed(1) +
+             '" height="' + bh.toFixed(1) + '" rx="1.5" fill="' + hexFor(s.energy) + '" opacity="0.55"></rect>';
+    }
+    return out;
+  }
+  function nightRects() {
+    var f = 'rgba(120,140,200,0.07)';
+    return '<rect x="' + X(0) + '" y="' + PADT + '" width="' + (X(WAKE_H) - X(0)).toFixed(1) + '" height="' + PH + '" fill="' + f + '"></rect>' +
+           '<rect x="' + X(BED_H).toFixed(1) + '" y="' + PADT + '" width="' + (X(24) - X(BED_H)).toFixed(1) + '" height="' + PH + '" fill="' + f + '"></rect>';
+  }
+  function axisLabels() {
+    var ticks = [[0, '12A'], [6, '6A'], [12, '12P'], [18, '6P'], [24, '12A']];
+    return ticks.map(function (tk) {
+      var anchor = tk[0] === 0 ? 'start' : (tk[0] === 24 ? 'end' : 'middle');
+      return '<text class="cf-axis-label" x="' + X(tk[0]).toFixed(1) + '" y="' + (VH - 6) + '" text-anchor="' + anchor + '">' + tk[1] + '</text>';
+    }).join('');
+  }
+
+  // Marker layer (now-line + scrub-line + dot) — re-rendered alone during scrub
+  // so the static paths and the hit-rect stay attached (cheap, no flicker).
+  function markerSvg() {
+    var nowT = hourOfNow();
+    var markT = (scrubT == null) ? nowT : scrubT;
+    var markS = sampleAt(markT);
+    var markX = X(markT), markY = Y(markS.energy);
+    var nowLine = '<line x1="' + X(nowT).toFixed(1) + '" y1="' + PADT + '" x2="' + X(nowT).toFixed(1) + '" y2="' + (PADT + PH) + '" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="3 3"></line>';
+    var scrubLine = (scrubT == null) ? '' :
+      '<line x1="' + markX.toFixed(1) + '" y1="' + PADT + '" x2="' + markX.toFixed(1) + '" y2="' + (PADT + PH) + '" stroke="rgba(255,255,255,0.4)" stroke-width="1"></line>';
+    var dot = '<circle cx="' + markX.toFixed(1) + '" cy="' + markY.toFixed(1) + '" r="5" fill="' + hexFor(markS.energy) + '"><animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/></circle>' +
+              '<circle cx="' + markX.toFixed(1) + '" cy="' + markY.toFixed(1) + '" r="2.5" fill="#0a0a0b"></circle>';
+    return nowLine + scrubLine + dot;
+  }
+
+  function renderChart() {
+    var body = '';
+    if (mode === 'bars') {
+      body = barsSvg();
+    } else if (mode === 'stack') {
+      body += '<path d="' + areaPath('baseline') + '" fill="rgba(255,255,255,0.05)"></path>';
+      body += '<path d="' + linePath('baseline') + '" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"></path>';
+      body += '<path d="' + bandPath() + '" fill="rgba(201,163,107,0.28)"></path>';
+      body += '<path d="' + linePath('energy') + '" fill="none" stroke="#C9A36B" stroke-width="2.5" stroke-linejoin="round" filter="url(#cfGlow)"></path>';
+    } else {
+      body += '<path d="' + areaPath('energy') + '" fill="url(#cfArea)"></path>';
+      body += '<path d="' + linePath('energy') + '" fill="none" stroke="url(#cfStroke)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#cfGlow)"></path>';
+    }
+
+    var defs =
+      '<defs>' +
+      '<linearGradient id="cfStroke" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0%" stop-color="#7DD3FC"/><stop offset="45%" stop-color="#6BE3A4"/><stop offset="75%" stop-color="#F2C063"/><stop offset="100%" stop-color="#E07658"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="cfArea" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="rgba(201,163,107,0.30)"/><stop offset="100%" stop-color="rgba(201,163,107,0.02)"/>' +
+      '</linearGradient>' +
+      '<filter id="cfGlow" x="-20%" y="-40%" width="140%" height="180%">' +
+        '<feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+      '</filter>' +
+      '</defs>';
+
+    var svg = '<svg viewBox="0 0 ' + VW + ' ' + VH + '" id="cfSvg">' + defs +
+      nightRects() + body + axisLabels() +
+      '<g id="cfMarker">' + markerSvg() + '</g>' +
+      '<rect id="cfScrub" x="' + PADL + '" y="' + PADT + '" width="' + PW + '" height="' + PH + '" fill="transparent" style="cursor:crosshair;touch-action:none"></rect>' +
+      '</svg>';
+    $('cfChart').innerHTML = svg;
+    attachScrub();
+  }
+
+  // ---------------------------------------------------------------
+  // Scrub interaction (map from the live hit-rect's own width)
+  // ---------------------------------------------------------------
+  function setScrub(t) { scrubT = t; var g = $('cfMarker'); if (g) g.innerHTML = markerSvg(); updateRing(); }
+  function clearScrub() { if (scrubT == null) return; scrubT = null; var g = $('cfMarker'); if (g) g.innerHTML = markerSvg(); updateRing(); }
+  function tFromEvent(ev) {
+    var el = $('cfScrub');
+    if (!el) return (scrubT == null) ? hourOfNow() : scrubT;
+    var r = el.getBoundingClientRect();
+    if (!r.width) return (scrubT == null) ? hourOfNow() : scrubT;
+    var cx = (ev.touches && ev.touches[0]) ? ev.touches[0].clientX : ev.clientX;
+    return clamp((cx - r.left) / r.width * 24, 0, 24);
+  }
+  function attachScrub() {
+    var rect = $('cfScrub'); if (!rect) return;
+    var dragging = false;
+    rect.addEventListener('pointerdown', function (ev) {
+      dragging = true;
+      try { rect.setPointerCapture(ev.pointerId); } catch (e) {}
+      setScrub(tFromEvent(ev)); ev.preventDefault();
+    });
+    rect.addEventListener('pointermove', function (ev) {
+      if (dragging || ev.buttons === 0) setScrub(tFromEvent(ev));
+    });
+    rect.addEventListener('pointerup', function (ev) {
+      dragging = false;
+      try { rect.releasePointerCapture(ev.pointerId); } catch (e) {}
+      clearScrub();
+    });
+    rect.addEventListener('pointercancel', function () { dragging = false; clearScrub(); });
+    rect.addEventListener('pointerleave', function () { if (!dragging) clearScrub(); });
+  }
+
+  // ---------------------------------------------------------------
+  // Ring
+  // ---------------------------------------------------------------
+  function updateRing() {
+    var t = (scrubT == null) ? hourOfNow() : scrubT;
+    var s = sampleAt(t).energy;
+    var rounded = Math.round(s);
+    var circ = 2 * Math.PI * 52;
+    var fill = $('cfRingFill');
+    fill.style.strokeDasharray = circ.toFixed(1);
+    fill.style.strokeDashoffset = (circ * (1 - clamp(s, 0, 100) / 100)).toFixed(1);
+    fill.style.stroke = colorFor(s);
+    $('cfRingScore').textContent = rounded;
+    $('cfRingWord').textContent = wordFor(s);
+    $('cfRingWhen').textContent = (scrubT == null) ? 'RIGHT NOW' : fmtClock(t).toUpperCase();
+    $('cfDayHeadline').textContent = (scrubT == null) ? 'Energy right now' : 'Energy at ' + fmtClock(t);
+  }
+
+  // ---------------------------------------------------------------
+  // Footer band + Smart Timing
+  // ---------------------------------------------------------------
+  function renderTiming() {
+    var pk = peakInfo();
+    var nowT = hourOfNow();
+    var crash = crashInfo(nowT, 8);
+    var cutoff = coffeeCutoff();
+    var T = targets();
+
+    // footer band
+    $('cfBandPeak').textContent = pk ? (fmtClock(pk.lo) + ' – ' + fmtClock(pk.hi)) : '—';
+    $('cfBandCrash').textContent = crash ? ('~' + fmtClock(crash.t)) : 'None likely';
+    $('cfBandCutoff').textContent = fmtClock(cutoff);
+
+    // tiles
+    if (pk) {
+      $('cfProdV').textContent = fmtClock(pk.t);
+      $('cfProdSub').textContent = 'Window ' + fmtClock(pk.lo) + '–' + fmtClock(pk.hi) + ' · peaks at ' + pk.score + '/100';
+    } else { $('cfProdV').textContent = '—'; $('cfProdSub').textContent = ''; }
+
+    if (crash) {
+      $('cfCrashV').textContent = '~' + fmtClock(crash.t);
+      $('cfCrashSub').textContent = 'Energy dips toward ' + crash.low + '/100 (−' + crash.drop + ')';
+    } else {
+      $('cfCrashV').textContent = 'Steady';
+      $('cfCrashSub').textContent = 'No big crash in the next 8 h';
+    }
+
+    var past = nowT > cutoff;
+    $('cfCutV').textContent = fmtClock(cutoff);
+    $('cfCutSub').textContent = past ? 'Already passed — skip more coffee' : 'Keeps you under 30 mg by ' + fmtClock(BED_H);
+
+    // tips
+    var tips = [];
+    var entries = todayEntries();
+    var lastHour = null;
+    entries.forEach(function (e) { var d = new Date(e.t); var h = d.getHours() + d.getMinutes() / 60; if (lastHour == null || h > lastHour) lastHour = h; });
+
+    if (pk) tips.push(['🎯', 'Caffeine kicks in ~30–60 min — to ride your ' + fmtClock(pk.t) + ' peak, have it by ' + fmtClock(pk.t - 0.75) + '.']);
+    tips.push(['🌙', 'To protect sleep, skip caffeine after ' + fmtClock(cutoff) + ' (about ' + (HALF_LIFE * (Math.log(95 / 30) / Math.LN2)).toFixed(1) + ' h before your ' + fmtClock(BED_H) + ' bedtime).']);
+    if (lastHour != null && lastHour > cutoff) tips.push(['⚠️', 'Your last drink was at ' + fmtClock(lastHour) + ', past today’s cutoff — it may still be in your system at bedtime.']);
+    if (crash) tips.push(['☀️', 'Beat the ~' + fmtClock(crash.t) + ' crash with daylight or a short walk instead of another cup.']);
+    tips.push(['💧', 'Caffeine is a mild diuretic — chase each drink with water (see your Water page).']);
+    var todayMg = entries.reduce(function (a, e) { return a + (e.mg || 0); }, 0);
+    if (todayMg > T.target) tips.push(['📊', 'You’re over your ≈3 mg/kg target (' + T.target + ' mg) for today — consider easing off.']);
+    if (!T.set) tips.push(['⚖️', 'Set your weight on the Water page to personalize your caffeine target.']);
+
+    $('cfTips').innerHTML = tips.slice(0, 6).map(function (t) {
+      return '<li class="cf-tip"><span class="cf-tip-ic">' + t[0] + '</span><span>' + t[1] + '</span></li>';
+    }).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // Today (mg bar)
+  // ---------------------------------------------------------------
+  function renderToday() {
+    var T = targets();
+    var entries = todayEntries();
+    var todayMg = entries.reduce(function (a, e) { return a + (e.mg || 0); }, 0);
+    var activeNow = Math.round(totalActiveAt(Date.now()));
+    var pct = clamp(todayMg / T.limit, 0, 1.15);
+    var barColor = todayMg <= T.limit * 0.7 ? '#6BE3A4' : (todayMg <= T.limit ? '#F2C063' : '#FF6B6B');
+
+    $('cfMgNum').textContent = Math.round(todayMg);
+    $('cfMgLimit').textContent = '/ ' + T.limit + ' mg target';
+    var fill = $('cfBarFill');
+    fill.style.width = (Math.min(pct, 1) * 100).toFixed(1) + '%';
+    fill.style.background = barColor;
+    $('cfActiveNow').textContent = activeNow;
+
+    var note;
+    if (!T.set) {
+      note = 'Using a default 75 kg (≈' + T.target + ' mg target). Set your weight on the Water page for a personalized number. FDA ceiling is ' + FDA + ' mg/day.';
+    } else {
+      note = 'Your ≈3 mg/kg target is ' + T.target + ' mg (' + Math.round(T.kg) + ' kg). FDA ceiling is ' + FDA + ' mg/day.';
+      if (todayMg > T.limit) note += ' You’re over target for today.';
+      else if (todayMg > T.limit * 0.7) note += ' Getting close — about ' + Math.max(0, T.limit - Math.round(todayMg)) + ' mg of headroom.';
+    }
+    $('cfNote').textContent = note;
+  }
+
+  // ---------------------------------------------------------------
+  // Log a drink: search + custom
+  // ---------------------------------------------------------------
+  function allDrinks() {
+    var customMapped = custom.map(function (c) { return { name: c.name, mg: c.mg, emoji: c.emoji || '⭐', cat: 'custom', custom: true }; });
+    return customMapped.concat(DRINKS);
+  }
+  function renderResults() {
+    var q = ($('cfSearch').value || '').trim().toLowerCase();
+    var list = allDrinks();
+    var matched = q ? list.filter(function (d) { return d.name.toLowerCase().indexOf(q) !== -1 || d.cat.indexOf(q) !== -1; }) : list;
+    if (!matched.length) {
+      $('cfResults').innerHTML = '<div class="cf-empty">No match. Add it as a custom drink below.</div>';
+      return;
+    }
+    $('cfResults').innerHTML = matched.slice(0, 40).map(function (d, i) {
+      return '<button class="cf-result' + (d.custom ? ' is-custom' : '') + '" data-name="' + esc(d.name) + '" data-mg="' + d.mg + '" data-emoji="' + esc(d.emoji) + '">' +
+        '<span class="cf-result-emoji">' + d.emoji + '</span>' +
+        '<span class="cf-result-name">' + esc(d.name) + '</span>' +
+        '<span class="cf-result-cat">' + d.cat + '</span>' +
+        '<span class="cf-result-mg">' + d.mg + ' mg</span>' +
+      '</button>';
+    }).join('');
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function logDrink(name, mg, emoji) {
+    var k = todayKey();
+    if (!logs[k]) logs[k] = [];
+    logs[k].push({ id: 'c' + Date.now() + Math.floor(Math.random() * 1000), name: name, mg: Math.round(mg), emoji: emoji || '☕', t: Date.now() });
+    saveLogs();
+    rerenderData();
+  }
+  function deleteEntry(id) {
+    var k = todayKey();
+    if (!logs[k]) return;
+    logs[k] = logs[k].filter(function (e) { return e.id !== id; });
+    if (!logs[k].length) delete logs[k];
+    saveLogs();
+    rerenderData();
+  }
+  function addCustom() {
+    var name = ($('cfCustomName').value || '').trim();
+    var mg = parseInt($('cfCustomMg').value, 10);
+    if (!name || !(mg >= 0)) return;
+    if (!custom.some(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })) {
+      custom.push({ name: name, mg: mg, emoji: '⭐' });
+      saveCustom();
+    }
+    $('cfCustomName').value = ''; $('cfCustomMg').value = '';
+    logDrink(name, mg, '⭐');     // save + log it now
+    renderResults();
+  }
+
+  // ---------------------------------------------------------------
+  // Logged today
+  // ---------------------------------------------------------------
+  function renderLogged() {
+    var entries = todayEntries().slice().sort(function (a, b) { return a.t - b.t; });
+    if (!entries.length) {
+      $('cfLogList').innerHTML = '<li class="cf-log-empty">Nothing logged yet today.</li>';
+      return;
+    }
+    $('cfLogList').innerHTML = entries.map(function (e) {
+      var peak = e.t + PEAK_MIN * 60000;
+      var half = e.t + HALF_LIFE * 3600000;
+      var clearedH = e.mg > 10 ? HALF_LIFE * (Math.log(e.mg / 10) / Math.LN2) : 0;
+      var cleared = e.t + clearedH * 3600000;
+      return '<li class="cf-log-row">' +
+        '<span class="cf-log-emoji">' + (e.emoji || '☕') + '</span>' +
+        '<span class="cf-log-main">' +
+          '<div class="cf-log-name">' + esc(e.name) + ' · <b>' + e.mg + ' mg</b></div>' +
+          '<div class="cf-log-times">' +
+            '<span>peak <b>' + fmtClockMs(peak) + '</b></span>' +
+            '<span>half-gone <b>' + fmtClockMs(half) + '</b></span>' +
+            (e.mg > 10 ? '<span>cleared <b>' + fmtClockMs(cleared) + '</b></span>' : '') +
+          '</div>' +
+        '</span>' +
+        '<span class="cf-log-when">' + fmtClockMs(e.t) + '</span>' +
+        '<button class="cf-del" data-del="' + e.id + '" aria-label="Delete">✕</button>' +
+      '</li>';
+    }).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // Orchestration
+  // ---------------------------------------------------------------
+  function rerenderData() {
+    buildSamples();   // logs changed -> energy curve changes
+    renderChart();
+    updateRing();
+    renderTiming();
+    renderToday();
+    renderLogged();
+    renderResults();
+  }
+  function rerenderClock() { // time passed; logs unchanged
+    buildSamples();
+    if (scrubT == null) { renderChart(); updateRing(); }
+    renderTiming();
+    renderToday();
+    renderLogged();
+  }
+
+  // ---------------------------------------------------------------
+  // Events
+  // ---------------------------------------------------------------
+  $('cfModes').addEventListener('click', function (e) {
+    var b = e.target.closest('.cf-mode'); if (!b) return;
+    mode = b.dataset.mode;
+    Array.prototype.forEach.call(this.querySelectorAll('.cf-mode'), function (m) { m.classList.toggle('is-active', m === b); });
+    renderChart();
+  });
+  $('cfSearch').addEventListener('input', renderResults);
+  $('cfResults').addEventListener('click', function (e) {
+    var b = e.target.closest('.cf-result'); if (!b) return;
+    logDrink(b.dataset.name, parseInt(b.dataset.mg, 10), b.dataset.emoji);
+  });
+  $('cfCustomAdd').addEventListener('click', addCustom);
+  $('cfCustomMg').addEventListener('keydown', function (e) { if (e.key === 'Enter') addCustom(); });
+  $('cfLogList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-del]'); if (!b) return;
+    deleteEntry(b.getAttribute('data-del'));
+  });
+
+  // ---------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------
+  load();
+  rerenderData();
+  setInterval(rerenderClock, 60 * 1000);
+
+  // Cloud sync
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof initCloudSync !== 'function') return;
+    initCloudSync({
+      appKey: 'caffeine',
+      syncedKeys: ['caf:logs', 'caf:custom'],
+      onApplied: function () { load(); rerenderData(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

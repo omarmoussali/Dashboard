@@ -112,13 +112,16 @@ body::after {
   bottom: 0; left: 0; right: 0;
   z-index: 100;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
   padding: 8px max(12px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
   background: linear-gradient(180deg, transparent, rgba(5,5,6,0.92) 30%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+.bottom-tabs::-webkit-scrollbar { display: none; }
 .bottom-tabs::before {
   content: '';
   position: absolute;
@@ -128,7 +131,7 @@ body::after {
   pointer-events: none;
 }
 .bot-tab {
-  flex: 1; max-width: 140px;
+  flex: 0 0 auto; min-width: 72px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   background: transparent;
   border: 1px solid transparent;
@@ -1569,6 +1572,89 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 600px) {
   .sub-auto-toggle { width: 100%; justify-content: space-between; padding: 12px 14px; }
 }
+/* ===== Financial-freedom tabs (Freedom / Goals / Coach) ===== */
+.ff-card {
+  position: relative; background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
+  padding: 18px; margin-bottom: 12px;
+  box-shadow: var(--glass-shadow); overflow: hidden;
+}
+.ff-k { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
+.ff-sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5; }
+.ff-muted { color: var(--text-tertiary); font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 11px; }
+.ff-block-k { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.ff-hero { background: radial-gradient(circle at 100% 0%, rgba(110,231,183,0.12), transparent 60%), var(--bg-card); }
+.ff-hero-row { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 12px; }
+.ff-hero-num { font-size: 52px; font-weight: 800; letter-spacing: -0.04em; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; }
+.ff-hero-unit { font-size: 16px; color: var(--text-tertiary); font-weight: 600; }
+
+.ff-bar { position: relative; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+.ff-bar-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 999px; background: #6EE7B7; transition: width 0.6s cubic-bezier(0.22,1,0.36,1), background 0.4s; }
+
+.ff-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.ff-stat { padding: 14px; margin-bottom: 0; }
+.ff-stat-v { font-size: 20px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin-top: 4px; }
+.ff-saverate { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.ff-saverate-v { font-size: 26px; font-weight: 800; color: #6EE7B7; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.ff-saverate-note { font-size: 12px; color: var(--text-secondary); text-align: right; max-width: 58%; line-height: 1.45; }
+
+.ff-nudge {
+  position: relative; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px;
+  background: rgba(110,231,183,0.07); border: 1px solid rgba(110,231,183,0.18);
+  font-size: 13.5px; color: var(--text-secondary); line-height: 1.55;
+}
+.ff-nudge.warn { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.22); }
+.ff-nudge.bad { background: rgba(255,107,107,0.07); border-color: rgba(255,107,107,0.22); }
+.ff-nudge b { color: var(--text-primary); }
+.ff-nudge .ff-nudge-h { display: block; font-weight: 800; color: var(--text-primary); margin-bottom: 5px; font-size: 14px; }
+
+.ff-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .ff-inputs { grid-template-columns: 1fr; } .ff-grid3 { grid-template-columns: 1fr; } }
+.ff-field { display: flex; flex-direction: column; gap: 6px; }
+.ff-field span { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+.ff-field input, .ff-goal-add input {
+  width: 100%; padding: 11px 12px; background: var(--bg-deep); color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.10); border-radius: 10px; font-family: inherit; font-size: 14px; outline: none;
+  font-variant-numeric: tabular-nums; transition: border-color 0.15s;
+}
+.ff-field input:focus, .ff-goal-add input:focus { border-color: rgba(110,231,183,0.5); }
+
+.ff-btn { border: 0; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; padding: 11px 16px; border-radius: 10px; background: #6EE7B7; color: #04130c; transition: filter 0.15s, transform 0.06s; }
+.ff-btn:hover { filter: brightness(1.08); } .ff-btn:active { transform: scale(0.97); }
+
+.ff-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.ff-chip { border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); color: var(--text-secondary); border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.ff-chip:hover { border-color: rgba(110,231,183,0.4); color: var(--text-primary); }
+.ff-goal-add { display: grid; grid-template-columns: 1fr 100px 90px auto; gap: 8px; }
+@media (max-width: 560px) { .ff-goal-add { grid-template-columns: 1fr 1fr; } .ff-goal-add .ff-btn { grid-column: span 2; } }
+
+.ff-goal { padding: 16px 18px; }
+.ff-goal-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ff-goal-emoji { font-size: 18px; }
+.ff-goal-name { flex: 1; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.ff-goal-pct { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 700; color: #6EE7B7; font-variant-numeric: tabular-nums; }
+.ff-goal-amts { display: flex; align-items: baseline; justify-content: space-between; margin-top: 8px; }
+.ff-goal-saved { font-size: 14px; color: var(--text-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ff-goal-target { font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.ff-goal-eta { font-size: 11.5px; color: var(--text-tertiary); margin-top: 6px; }
+.ff-goal-ctl { display: flex; gap: 6px; margin-top: 12px; }
+.ff-goal-ctl button { border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); color: var(--text-secondary); border-radius: 9px; padding: 8px 10px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+.ff-goal-ctl button:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+.ff-goal-ctl .ff-goal-del { margin-left: auto; color: var(--text-tertiary); }
+.ff-goal-ctl .ff-goal-del:hover { color: #FF6B6B; }
+.ff-goals-foot { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+.ff-empty { text-align: center; font-style: italic; font-size: 12.5px; color: var(--text-tertiary); padding: 18px; }
+
+.ff-coach-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+.ff-coach-body b { color: var(--text-primary); }
+.ff-list, .ff-check { list-style: none; margin: 12px 0 0; padding: 0; }
+.ff-list li, .ff-check li { position: relative; padding: 7px 0 7px 24px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.05); }
+.ff-list li:first-child, .ff-check li:first-child { border-top: 0; }
+.ff-list li b, .ff-check li b { color: var(--text-primary); }
+.ff-list li::before { content: '▹'; position: absolute; left: 4px; color: #6EE7B7; }
+.ff-check li::before { content: '✓'; position: absolute; left: 3px; color: #6EE7B7; font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -1853,13 +1939,147 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   </div>
 </div>
 
+<!-- ===== FREEDOM ===== -->
+<div class="section" data-section="freedom" hidden>
+  <div class="section-title"><span class="section-title-text">FINANCIAL FREEDOM</span></div>
+
+  <div class="ff-card ff-hero">
+    <div class="ff-k">Runway · how long your cash covers you</div>
+    <div class="ff-hero-row"><span class="ff-hero-num" id="ffRunway">—</span><span class="ff-hero-unit">months</span></div>
+    <div class="ff-bar"><div class="ff-bar-fill" id="ffRunwayBar"></div></div>
+    <div class="ff-sub" id="ffRunwaySub">Add your cash and monthly expenses below to see your runway.</div>
+  </div>
+
+  <div class="ff-grid3">
+    <div class="ff-card ff-stat"><div class="ff-k">Income / mo</div><div class="ff-stat-v" id="ffInV">—</div></div>
+    <div class="ff-card ff-stat"><div class="ff-k">Expenses / mo</div><div class="ff-stat-v" id="ffOutV">—</div></div>
+    <div class="ff-card ff-stat"><div class="ff-k">Saved / mo</div><div class="ff-stat-v" id="ffNetV">—</div></div>
+  </div>
+
+  <div class="ff-card ff-saverate">
+    <div><div class="ff-k">Savings rate</div><div class="ff-saverate-v" id="ffRate">—</div></div>
+    <div class="ff-saverate-note" id="ffRateNote"></div>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">🛡️ Emergency fund <span class="ff-muted" id="ffEmTarget"></span></div>
+    <div class="ff-bar"><div class="ff-bar-fill" id="ffEmBar"></div></div>
+    <div class="ff-sub" id="ffEmSub"></div>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">🚀 Monthly income goal</div>
+    <div class="ff-bar"><div class="ff-bar-fill" id="ffIncBar"></div></div>
+    <div class="ff-sub" id="ffIncSub"></div>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">🏔️ Freedom number <span class="ff-muted">(25× yearly expenses · the 4% rule)</span></div>
+    <div class="ff-bar"><div class="ff-bar-fill" id="ffFreeBar"></div></div>
+    <div class="ff-sub" id="ffFreeSub"></div>
+  </div>
+
+  <div class="ff-nudge" id="ffNudge"></div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">Your numbers</div>
+    <div class="ff-inputs">
+      <label class="ff-field"><span>Cash / savings (€)</span><input id="ffCash" type="number" inputmode="decimal" placeholder="auto from Net Worth"></label>
+      <label class="ff-field"><span>Monthly income (€)</span><input id="ffIncome" type="number" inputmode="decimal" placeholder="0"></label>
+      <label class="ff-field"><span>Monthly expenses (€)</span><input id="ffExpenses" type="number" inputmode="decimal" placeholder="0"></label>
+      <label class="ff-field"><span>Emergency target (months)</span><input id="ffEmMonths" type="number" inputmode="numeric" placeholder="6"></label>
+      <label class="ff-field"><span>Income goal (€/mo)</span><input id="ffIncomeGoal" type="number" inputmode="decimal" placeholder="0"></label>
+    </div>
+    <div class="ff-sub" id="ffCashHint" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- ===== GOALS ===== -->
+<div class="section" data-section="goals" hidden>
+  <div class="section-title"><span class="section-title-text">GOALS &amp; SINKING FUNDS</span></div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">New goal</div>
+    <div class="ff-chips" id="ffGoalChips"></div>
+    <div class="ff-goal-add">
+      <input id="ffGoalName" type="text" placeholder="Goal (e.g. Style &amp; image)">
+      <input id="ffGoalTarget" type="number" inputmode="decimal" placeholder="Target €">
+      <input id="ffGoalMonthly" type="number" inputmode="decimal" placeholder="€/mo">
+      <button class="ff-btn" id="ffGoalAdd">Add</button>
+    </div>
+  </div>
+
+  <div id="ffGoalsList"></div>
+  <div class="ff-card ff-goals-foot" id="ffGoalsFoot"></div>
+</div>
+
+<!-- ===== COACH ===== -->
+<div class="section" data-section="coach" hidden>
+  <div class="section-title"><span class="section-title-text">MINDSET &amp; BOUNDARIES</span></div>
+  <div class="ff-nudge" id="ffCoachHero"></div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">💸 Earn more — your leverage</div>
+    <div class="ff-coach-body">
+      You've got a rare stack: <b>marketing + AI automation + you can build software</b>. While job-hunting, that's a second income waiting to be switched on. Cutting subscriptions saves tens of euros; one retainer client adds hundreds — focus there.
+      <ul class="ff-list">
+        <li>Package a concrete offer: <b>"I automate [lead capture / reporting / outreach] for agencies &amp; SMBs."</b> One sentence, one price.</li>
+        <li>Land <b>1–2 retainers (€500–1500/mo)</b> from your existing network first — warm beats cold.</li>
+        <li>Post your builds on Instagram/LinkedIn — your marketing degree makes your <i>own</i> brand the best case study.</li>
+        <li>Turn a repeated automation into a small <b>productized service</b> so income isn't only your hours.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">❤️ Money &amp; relationships — keep your independence</div>
+    <div class="ff-coach-body">Dating should add to your life, not drain your runway. The protection against being financially used isn't suspicion — it's your <b>own money, own goals, and clear boundaries</b>.</div>
+    <ul class="ff-check">
+      <li>Keep <b>separate finances</b> early on. Shared accounts come after trust is earned over time, never on request.</li>
+      <li>Don't <b>spend to impress</b> — overspending to "buy" interest attracts people who like your wallet, not you.</li>
+      <li><b>Split or alternate</b> early dates. Generosity is great; obligation and pressure are red flags.</li>
+      <li>Watch for: rushing money talk, guilt-tripping your spending, "lend me / invest in this", or pressure to merge fast.</li>
+      <li>Your runway <b>is</b> your freedom — it lets you walk away from anything that isn't right. Protect it.</li>
+    </ul>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">👔 Style &amp; image — invest, don't impulse</div>
+    <div class="ff-coach-body" id="ffStyleBody"></div>
+    <ul class="ff-list">
+      <li><b>Quality basics, versatile colours</b> — 10 great pieces beat 30 trendy ones (cost-per-wear wins).</li>
+      <li>Fund it through a <b>capped "Style &amp; image" goal</b> in the Goals tab — spend from it, not from runway.</li>
+      <li>For a marketing brand, looking sharp is real ROI — but the ROI is <i>consistency &amp; confidence</i>, not logos.</li>
+    </ul>
+  </div>
+
+  <div class="ff-card">
+    <div class="ff-block-k">🧠 Core money rules</div>
+    <ul class="ff-check">
+      <li><b>Safety first:</b> 3–6 months of expenses in cash before any investing or big buys.</li>
+      <li><b>Pay yourself first:</b> the moment income lands, move your savings/goals amounts before spending.</li>
+      <li><b>Earn &gt; cut</b> right now: your ceiling on income is far higher than your floor on expenses.</li>
+      <li><b>Beat lifestyle creep:</b> when income rises, bank the raise — don't auto-upgrade your spending.</li>
+      <li><b>24-hour rule:</b> for any want over €100, sleep on it. Log it in Wishlist, decide tomorrow.</li>
+    </ul>
+  </div>
+</div>
+
 </div>
 
 <!-- ===== BOTTOM TAB BAR ===== -->
 <nav class="bottom-tabs" id="bottomTabs" aria-label="Sections">
-  <button class="bot-tab active" data-tab="net">
+  <button class="bot-tab active" data-tab="freedom">
+    <span class="bot-tab-icon">🧭</span>
+    <span class="bot-tab-label">Freedom</span>
+  </button>
+  <button class="bot-tab" data-tab="net">
     <span class="bot-tab-icon">📊</span>
     <span class="bot-tab-label">Net Worth</span>
+  </button>
+  <button class="bot-tab" data-tab="goals">
+    <span class="bot-tab-icon">🪙</span>
+    <span class="bot-tab-label">Goals</span>
   </button>
   <button class="bot-tab" data-tab="subs">
     <span class="bot-tab-icon">🔁</span>
@@ -1872,6 +2092,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   <button class="bot-tab" data-tab="wish">
     <span class="bot-tab-icon">🎯</span>
     <span class="bot-tab-label">Wishlist</span>
+  </button>
+  <button class="bot-tab" data-tab="coach">
+    <span class="bot-tab-icon">🧠</span>
+    <span class="bot-tab-label">Coach</span>
   </button>
 </nav>
 
@@ -1922,7 +2146,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   tabs.forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
   const savedTab = storeGet(TAB_KEY);
-  setActiveTab(savedTab && ['net','subs','incoming','wish'].includes(savedTab) ? savedTab : 'net');
+  setActiveTab(savedTab && ['freedom','net','goals','subs','incoming','wish','coach'].includes(savedTab) ? savedTab : 'freedom');
 
   // ============================================================
   // NET WORTH (copied from the main dashboard, verbatim logic)
@@ -3349,12 +3573,229 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 })();
 </script>
 <script>
+// =============================================================
+// Financial-freedom tabs: Freedom (runway/cashflow), Goals
+// (sinking funds), Coach (mindset). Self-contained — reads the
+// existing nw:* / subs data, writes fin:profile + fin:goals.
+// =============================================================
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function g(k, f) { try { var r = localStorage.getItem(k); return r==null?f:JSON.parse(r); } catch(e){ return f; } }
+  function s(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+  function eur(n) {
+    n = Math.round((Number(n)||0));
+    return '€' + n.toLocaleString('en-US');
+  }
+  function sumNw(cat) { var a = g('nw:'+cat, []); return Array.isArray(a) ? a.reduce(function(t,it){ return t + (Number(it.amount)||0); }, 0) : 0; }
+  function bankSum() { return sumNw('bank'); }
+  function netWorthSum() { return sumNw('bank')+sumNw('stocks')+sumNw('crypto')+sumNw('other'); }
+
+  function profile() { var p = g('fin:profile', {}); return (p && typeof p==='object') ? p : {}; }
+  function saveProfile(patch) { s('fin:profile', Object.assign({}, profile(), patch)); }
+  function goals() { var a = g('fin:goals', []); return Array.isArray(a) ? a : []; }
+  function saveGoals(a) { s('fin:goals', a); }
+
+  function nums() {
+    var p = profile();
+    var cash = (p.cash!=null && p.cash!=='') ? Number(p.cash) : bankSum();
+    var income = Number(p.income)||0, expenses = Number(p.expenses)||0;
+    var emMonths = Number(p.emMonths)||6, incomeGoal = Number(p.incomeGoal)||0;
+    var runway = expenses>0 ? cash/expenses : null;
+    var emTarget = emMonths*expenses, emProg = emTarget>0 ? cash/emTarget : 0;
+    var cashflow = income-expenses, rate = income>0 ? cashflow/income : null;
+    var freedomNum = expenses*12*25, freeProg = freedomNum>0 ? netWorthSum()/freedomNum : 0;
+    var incProg = incomeGoal>0 ? income/incomeGoal : 0;
+    return { cash:cash, income:income, expenses:expenses, emMonths:emMonths, emTarget:emTarget, emProg:emProg,
+             incomeGoal:incomeGoal, runway:runway, cashflow:cashflow, rate:rate, freedomNum:freedomNum, freeProg:freeProg, incProg:incProg, net:netWorthSum() };
+  }
+  function runwayColor(r){ return r==null?'#6EE7B7':(r<3?'#FF6B6B':(r<6?'#FBBF24':'#6EE7B7')); }
+  function setBar(id, pct, color){ var el=$(id); if(!el)return; el.style.width=clamp(pct,0,100).toFixed(1)+'%'; if(color)el.style.background=color; }
+
+  // ---------- Freedom ----------
+  function renderFreedom() {
+    if (!$('ffRunway')) return;
+    var n = nums();
+    // inputs
+    var p = profile();
+    if (document.activeElement !== $('ffCash')) $('ffCash').value = (p.cash!=null?p.cash:'');
+    if (document.activeElement !== $('ffIncome')) $('ffIncome').value = (p.income!=null?p.income:'');
+    if (document.activeElement !== $('ffExpenses')) $('ffExpenses').value = (p.expenses!=null?p.expenses:'');
+    if (document.activeElement !== $('ffEmMonths')) $('ffEmMonths').value = (p.emMonths!=null?p.emMonths:'');
+    if (document.activeElement !== $('ffIncomeGoal')) $('ffIncomeGoal').value = (p.incomeGoal!=null?p.incomeGoal:'');
+    $('ffCashHint').textContent = 'Auto from your Net Worth bank accounts: ' + eur(bankSum()) + '. Leave Cash blank to use it.';
+
+    // runway hero
+    $('ffRunway').textContent = n.runway==null ? '—' : (n.runway>=100?'99+':n.runway.toFixed(1));
+    setBar('ffRunwayBar', n.runway==null?0:(n.runway/6*100), runwayColor(n.runway));
+    $('ffRunwaySub').textContent = n.runway==null
+      ? 'Add your cash and monthly expenses below to see your runway.'
+      : 'You can cover ' + n.runway.toFixed(1) + ' months at ' + eur(n.expenses) + '/mo, with ' + eur(n.cash) + ' cash.';
+
+    // cashflow
+    $('ffInV').textContent = eur(n.income);
+    $('ffOutV').textContent = eur(n.expenses);
+    $('ffNetV').textContent = (n.cashflow>=0?'+':'−') + eur(Math.abs(n.cashflow));
+    $('ffNetV').style.color = n.cashflow>=0 ? '#6EE7B7' : '#FF6B6B';
+    $('ffRate').textContent = n.rate==null ? '—' : Math.round(n.rate*100)+'%';
+    $('ffRate').style.color = n.rate==null?'var(--text-tertiary)':(n.rate>=0.2?'#6EE7B7':(n.rate>=0?'#FBBF24':'#FF6B6B'));
+    $('ffRateNote').textContent = n.rate==null ? 'Add income to see your savings rate.'
+      : (n.cashflow<0 ? 'You\'re spending more than you earn — close this gap first.'
+      : (n.rate>=0.2 ? 'Great — 20%+ is a strong, freedom-building rate.' : 'Aim for 20%+. Earning more is the fastest lever.'));
+
+    // emergency fund
+    $('ffEmTarget').textContent = n.emTarget>0 ? '· target ' + eur(n.emTarget) + ' (' + n.emMonths + ' mo)' : '';
+    setBar('ffEmBar', n.emProg*100, n.emProg>=1?'#6EE7B7':'#7DD3FC');
+    $('ffEmSub').textContent = n.emTarget>0
+      ? eur(n.cash) + ' of ' + eur(n.emTarget) + ' · ' + Math.round(n.emProg*100) + '% funded' + (n.emProg>=1?' — fully covered. ✅':'')
+      : 'Set monthly expenses to size your emergency fund.';
+
+    // income goal
+    setBar('ffIncBar', n.incProg*100, n.incProg>=1?'#6EE7B7':'#FBBF24');
+    $('ffIncSub').textContent = n.incomeGoal>0
+      ? eur(n.income) + ' of ' + eur(n.incomeGoal) + '/mo goal · ' + (n.income>=n.incomeGoal?'hit it! 🎯':eur(n.incomeGoal-n.income)+'/mo to go')
+      : 'Set an income goal to track your earn-more progress.';
+
+    // freedom number
+    setBar('ffFreeBar', n.freeProg*100, '#B794F4');
+    $('ffFreeSub').textContent = n.freedomNum>0
+      ? eur(n.net) + ' of ' + eur(n.freedomNum) + ' · ' + (n.freeProg*100).toFixed(1) + '% — your long-term "work optional" target.'
+      : 'Set expenses to compute your freedom number (25× yearly expenses).';
+
+    renderNudge(n);
+  }
+
+  function renderNudge(n) {
+    var el = $('ffNudge'); if (!el) return;
+    el.className = 'ff-nudge';
+    if (n.expenses<=0) { el.innerHTML = '<span class="ff-nudge-h">Start here</span>Add your monthly expenses and cash to unlock your runway, emergency fund and freedom number.'; return; }
+    if (n.runway!=null && n.runway<3) {
+      el.classList.add('bad');
+      var cover = Math.round(1000/n.expenses*100);
+      el.innerHTML = '<span class="ff-nudge-h">⚠️ Earn-more mode — under 3 months runway</span>Right now, <b>making money beats saving it</b>. One €1,000/mo automation retainer would cover about <b>'+cover+'% of your monthly burn</b> and turn decline into breakeven. With your marketing + AI skills, landing 1–2 clients is priority #1 — see the Coach tab.';
+    } else if (n.runway!=null && n.runway<6) {
+      el.classList.add('warn');
+      el.innerHTML = '<span class="ff-nudge-h">Solid buffer — keep building</span>You\'ve got <b>'+n.runway.toFixed(1)+' months</b> of runway. Top it toward 6 months while you push income — that\'s the cushion that lets you say no to bad deals (and bad dates).';
+    } else if (n.runway!=null) {
+      el.innerHTML = '<span class="ff-nudge-h">Strong runway 💪</span><b>'+n.runway.toFixed(1)+' months</b> covered. You can take smart risks now: better-paying gigs, upskilling, and investing your surplus instead of letting it sit.';
+    }
+  }
+
+  // ---------- Goals ----------
+  var GOAL_CHIPS = [
+    { name:'Emergency fund', emoji:'🛡️' }, { name:'Style & image', emoji:'👔' },
+    { name:'New laptop / gear', emoji:'💻' }, { name:'Upskilling / course', emoji:'📚' },
+    { name:'Travel', emoji:'✈️' }, { name:'Buffer', emoji:'🪙' }
+  ];
+  function emojiFor(name){ var nm=(name||'').toLowerCase();
+    if(/emergenc|buffer|safety/.test(nm))return'🛡️'; if(/style|cloth|image|wardrobe|outfit/.test(nm))return'👔';
+    if(/laptop|gear|pc|tech|phone|camera/.test(nm))return'💻'; if(/travel|trip|vacation|flight/.test(nm))return'✈️';
+    if(/course|learn|upskill|study|cert/.test(nm))return'📚'; if(/car|vehicle/.test(nm))return'🚗';
+    if(/home|house|rent|apartment|flat/.test(nm))return'🏠'; if(/invest|stock|crypto/.test(nm))return'📈'; return'🎯'; }
+
+  function renderGoals() {
+    if (!$('ffGoalChips')) return;
+    $('ffGoalChips').innerHTML = GOAL_CHIPS.map(function(c){ return '<button class="ff-chip" data-name="'+c.name+'">'+c.emoji+' '+c.name+'</button>'; }).join('');
+    var arr = goals();
+    if (!arr.length) { $('ffGoalsList').innerHTML = '<div class="ff-card ff-empty">No goals yet — tap a suggestion above or add your own. Sinking funds turn "someday" into a date.</div>'; }
+    else {
+      $('ffGoalsList').innerHTML = arr.map(function(go, i){
+        var saved = Number(go.saved)||0, target = Number(go.target)||0, monthly = Number(go.monthly)||0;
+        var pct = target>0 ? clamp(saved/target,0,1)*100 : 0;
+        var done = target>0 && saved>=target;
+        var eta = (!done && monthly>0 && target>saved) ? Math.ceil((target-saved)/monthly) : null;
+        return '<div class="ff-card ff-goal">'+
+          '<div class="ff-goal-top"><span class="ff-goal-emoji">'+(go.emoji||emojiFor(go.name))+'</span><span class="ff-goal-name">'+esc(go.name)+'</span><span class="ff-goal-pct">'+Math.round(pct)+'%</span></div>'+
+          '<div class="ff-bar"><div class="ff-bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+(done?'#6EE7B7':'#7DD3FC')+'"></div></div>'+
+          '<div class="ff-goal-amts"><span class="ff-goal-saved">'+eur(saved)+'</span><span class="ff-goal-target">of '+eur(target)+'</span></div>'+
+          '<div class="ff-goal-eta">'+(done?'Funded! 🎉':(eta!=null?('~'+eta+' month'+(eta===1?'':'s')+' at '+eur(monthly)+'/mo'):(monthly>0?'':'Set a €/mo contribution to get an ETA.')))+'</div>'+
+          '<div class="ff-goal-ctl"><button data-add="50" data-i="'+i+'">+ €50</button><button data-add="100" data-i="'+i+'">+ €100</button><button data-set="'+i+'">Set…</button><button class="ff-goal-del" data-del="'+i+'">Delete</button></div>'+
+        '</div>';
+      }).join('');
+    }
+    var totalMonthly = arr.reduce(function(t,go){ return t+(Number(go.monthly)||0); }, 0);
+    var n = nums();
+    var foot = arr.length ? ('You\'re committing <b>'+eur(totalMonthly)+'/mo</b> across '+arr.length+' goal'+(arr.length===1?'':'s')+'.') : 'Tip: make your Emergency fund the first goal, then a capped "Style & image" fund.';
+    if (arr.length && n.cashflow>0) foot += ' Your monthly surplus is '+eur(n.cashflow)+(totalMonthly>n.cashflow?' — that\'s less than you\'re committing, so stagger them.':' — you can fund these comfortably.');
+    $('ffGoalsFoot').innerHTML = foot;
+  }
+  function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ---------- Coach ----------
+  function renderCoach() {
+    if (!$('ffCoachHero')) return;
+    var n = nums();
+    var el = $('ffCoachHero'); el.className='ff-nudge';
+    if (n.expenses<=0) { el.innerHTML='<span class="ff-nudge-h">Set your numbers first</span>Fill in the Freedom tab and this coach tailors itself to your situation.'; }
+    else if (n.runway!=null && n.runway<3) { el.classList.add('bad'); el.innerHTML='<span class="ff-nudge-h">Your phase: stabilise income</span>With under 3 months runway, the game is <b>cash in</b>, not optimisation. Every hour is best spent landing a client or a job — protect the runway you have and avoid big purchases until it\'s past 3 months.'; }
+    else if (n.runway!=null && n.runway<6) { el.classList.add('warn'); el.innerHTML='<span class="ff-nudge-h">Your phase: build the buffer</span>You\'re stable. Push runway to 6 months and start a "Style & image" fund — but keep earning the priority.'; }
+    else { el.innerHTML='<span class="ff-nudge-h">Your phase: grow</span>Strong runway. Now you can invest the surplus, raise your rates, and spend intentionally on things that compound (skills, brand, health).'; }
+
+    var styleBudget = n.income>0 ? Math.max(40, Math.round(n.income*0.07/10)*10) : null;
+    $('ffStyleBody').innerHTML = styleBudget
+      ? 'A healthy style/image budget is ~5–10% of income — for you that\'s about <b>'+eur(styleBudget)+'/mo</b>. Create a "Style &amp; image" goal with that monthly amount and buy only from it.'
+      : 'Set your monthly income in the Freedom tab and I\'ll suggest a style budget (about 5–10% of income).';
+  }
+
+  // ---------- master ----------
+  function renderAll(){ renderFreedom(); renderGoals(); renderCoach(); }
+
+  // ---------- events ----------
+  function bindInput(id, key, isInt) {
+    var el = $(id); if(!el) return;
+    el.addEventListener('input', function(){
+      var v = el.value.trim();
+      var patch = {}; patch[key] = v==='' ? null : (isInt?parseInt(v,10):parseFloat(v));
+      if (patch[key]!=null && isNaN(patch[key])) return;
+      saveProfile(patch); renderFreedom(); renderCoach();
+    });
+  }
+  bindInput('ffCash','cash'); bindInput('ffIncome','income'); bindInput('ffExpenses','expenses');
+  bindInput('ffEmMonths','emMonths', true); bindInput('ffIncomeGoal','incomeGoal');
+
+  $('ffGoalChips') && $('ffGoalChips').addEventListener('click', function(e){
+    var b = e.target.closest('.ff-chip'); if(!b) return;
+    $('ffGoalName').value = b.dataset.name; $('ffGoalTarget').focus();
+  });
+  function addGoalFromForm(){
+    var name = $('ffGoalName').value.trim(); if(!name) return;
+    var target = parseFloat($('ffGoalTarget').value)||0;
+    var monthly = parseFloat($('ffGoalMonthly').value)||0;
+    var arr = goals(); arr.push({ id:'g'+Date.now(), name:name, emoji:emojiFor(name), target:target, saved:0, monthly:monthly });
+    saveGoals(arr); $('ffGoalName').value=''; $('ffGoalTarget').value=''; $('ffGoalMonthly').value='';
+    renderGoals();
+  }
+  $('ffGoalAdd') && $('ffGoalAdd').addEventListener('click', addGoalFromForm);
+  $('ffGoalMonthly') && $('ffGoalMonthly').addEventListener('keydown', function(e){ if(e.key==='Enter') addGoalFromForm(); });
+  $('ffGoalsList') && $('ffGoalsList').addEventListener('click', function(e){
+    var arr = goals(); var b;
+    if ((b=e.target.closest('[data-add]'))) { var i=+b.dataset.i; if(arr[i]){ arr[i].saved=(Number(arr[i].saved)||0)+ (+b.dataset.add); saveGoals(arr); renderGoals(); } }
+    else if ((b=e.target.closest('[data-set]'))) { var j=+b.dataset.set; if(arr[j]){ var v=prompt('Amount saved so far for "'+arr[j].name+'" (€):', arr[j].saved||0); if(v!=null){ var nv=parseFloat(v); if(!isNaN(nv)){ arr[j].saved=Math.max(0,nv); saveGoals(arr); renderGoals(); } } } }
+    else if ((b=e.target.closest('[data-del]'))) { var k=+b.dataset.del; if(arr[k] && confirm('Delete "'+arr[k].name+'"?')){ arr.splice(k,1); saveGoals(arr); renderGoals(); } }
+  });
+
+  // re-render a tab when it's opened (data may have changed in another tab)
+  document.querySelectorAll('.bot-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = btn.dataset.tab;
+      if (t==='freedom') renderFreedom();
+      else if (t==='goals') renderGoals();
+      else if (t==='coach') renderCoach();
+    });
+  });
+  window.addEventListener('storage', renderAll);
+
+  renderAll();
+})();
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'finance',
-    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history'],
-    syncedPrefixes: ['nw:'],
+    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history', 'fin:profile', 'fin:goals'],
+    syncedPrefixes: ['nw:', 'fin:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });

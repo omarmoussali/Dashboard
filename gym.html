@@ -431,6 +431,20 @@ img, video, canvas, svg { max-width: 100%; }
   padding: 8px; border-radius: 8px; margin-bottom: 12px; display: none;
 }
 .po-bw-banner.show { display: block; }
+.po-target {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  background: rgba(110, 231, 183, 0.06);
+  border: 1px solid rgba(110, 231, 183, 0.16);
+  border-radius: 8px;
+  font-size: 12px; color: var(--text-2);
+}
+.po-target b { color: #6ee7b7; font-variant-numeric: tabular-nums; font-weight: 700; }
+.po-target .po-target-k {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3);
+}
 
 /* ----- Last set summary ----- */
 .po-last-set {
@@ -1617,6 +1631,7 @@ img, video, canvas, svg { max-width: 100%; }
     <!-- Log a set -->
     <div class="po-sub-section">
       <div class="po-sub-title">Log today's top set</div>
+      <div class="po-target" id="poTarget"></div>
       <div class="po-bw-banner" id="bwBanner">Bodyweight — log reps only</div>
       <div class="po-last-set" id="lastSet">
         <span class="po-last-label">Last time</span>
@@ -1779,6 +1794,10 @@ img, video, canvas, svg { max-width: 100%; }
         <input type="number" id="exRepMax" value="8">
       </div>
     </div>
+    <div class="po-field" id="exSetsField">
+      <label style="font-size:11px;color:var(--text-3);font-weight:700;letter-spacing:0.04em;text-transform:uppercase">Working sets</label>
+      <input type="number" id="exSets" min="1" max="12" value="3">
+    </div>
     <div class="po-field" id="exStepField">
       <label style="font-size:11px;color:var(--text-3);font-weight:700;letter-spacing:0.04em;text-transform:uppercase">Increment</label>
       <input type="number" id="exStep" step="0.5" value="2.5">
@@ -1889,9 +1908,16 @@ img, video, canvas, svg { max-width: 100%; }
     const missingDays = allConfigDayIds.some(id => !savedDayIds.includes(id));
     s.days = (Array.isArray(s.days) && s.days.length && !missingDays) ? s.days : CONFIG.days.slice();
     s.exercises = Array.isArray(s.exercises) ? s.exercises : buildDefaultExercises();
-    // Migrate older exercises (saved before equipment existed) to tag their
-    // gear and snap to real-world load jumps — dumbbells 2 kg, cables 5 kg.
-    // Runs once per exercise (guarded by equip == null); manual edits stick.
+    // Migrate exercises saved before equipment/sets existed: tag the gear (so
+    // loads snap to real jumps — dumbbells 2 kg, cables 5 kg) and assign a
+    // research-based working-set target. Runs once per field; manual edits stick.
+    function defaultSetsFor(e) {
+      const n = (e && e.name || '').toLowerCase();
+      // Big compounds + width-priority side delts get 4 work sets; isolation 3.
+      if (/banca|inclinad|hack|prensa|jal[oó]n|remo|hip ?thrust|peso muerto|press hombro|squat/.test(n)) return 4;
+      if (/lateral/.test(n)) return 4;
+      return 3;
+    }
     s.exercises = s.exercises.map(function (e) {
       if (!e) return e;
       if (e.equip == null) {
@@ -1899,8 +1925,28 @@ img, video, canvas, svg { max-width: 100%; }
         if (e.equip === 'dumbbell') e.step = 2;
         else if (e.equip === 'cable') e.step = 5;
       }
+      if (e.sets == null) e.sets = defaultSetsFor(e);
       return e;
     });
+    // One-time: add the movements that complete an aesthetic physique —
+    // direct abs, quad sweep, a hamstring hinge, rear-delt isolation, and a
+    // chest fly. Guarded so deleting them later won't re-add them.
+    if (!s.aestheticV1) {
+      s.aestheticV1 = true;
+      const GID = (s.gyms[0] && s.gyms[0].id) || 'gym';
+      const ADD = [
+        { name: 'Aperturas Pecho Cable',     day: 'push',     equip: 'cable',   repMin: 12, repMax: 15, step: 5,   startWeight: 10, sets: 3 },
+        { name: 'Extensión de Cuádriceps',   day: 'lower',    equip: 'machine', repMin: 12, repMax: 20, step: 5,   startWeight: 30, sets: 3 },
+        { name: 'Peso Muerto Rumano',        day: 'lower',    equip: 'barbell', repMin: 8,  repMax: 12, step: 2.5, startWeight: 60, sets: 4 },
+        { name: 'Pájaro Deltoide Posterior', day: 'estetica', equip: 'machine', repMin: 15, repMax: 20, step: 5,   startWeight: 20, sets: 3 },
+        { name: 'Crunch Abdominal Cable',    day: 'estetica', equip: 'cable',   repMin: 12, repMax: 20, step: 5,   startWeight: 15, sets: 3 }
+      ];
+      ADD.forEach(function (ne, i) {
+        if (!s.exercises.some(function (e) { return e.name === ne.name && e.day === ne.day; })) {
+          s.exercises.push(Object.assign({ id: 'aes_' + Date.now() + '_' + i, gym: GID, bw: false }, ne));
+        }
+      });
+    }
     s.logs = (s.logs && typeof s.logs === 'object') ? s.logs : {};
     s.filterGym = s.filterGym || s.gyms[0].id;
     s.filterDay = s.filterDay || s.days[0].id;
@@ -2305,6 +2351,19 @@ img, video, canvas, svg { max-width: 100%; }
       const w = logs.length ? logs[logs.length - 1].weight : (ex.startWeight || 0);
       $('weightInput').value = w;
     }
+    // Research-based target for this exercise (working sets × optimal reps).
+    const tgt = $('poTarget');
+    if (tgt) {
+      if (ex) {
+        const sets = ex.sets || 3;
+        tgt.innerHTML = '<span class="po-target-k">Target</span>' +
+          '<span><b>' + sets + '</b> ' + (sets === 1 ? 'set' : 'sets') +
+          ' × <b>' + ex.repMin + '–' + ex.repMax + '</b> reps · last set ~1–2 left in reserve</span>';
+        tgt.style.display = '';
+      } else {
+        tgt.style.display = 'none';
+      }
+    }
   }
 
   // ============================================================
@@ -2694,6 +2753,7 @@ img, video, canvas, svg { max-width: 100%; }
       $('exEquip').value = ex.equip || inferEquip(ex.name);
       $('exRepMin').value = ex.repMin;
       $('exRepMax').value = ex.repMax;
+      $('exSets').value = ex.sets || 3;
       $('exStep').value = ex.step;
     } else {
       $('exName').value = '';
@@ -2704,6 +2764,7 @@ img, video, canvas, svg { max-width: 100%; }
       $('exEquip').value = 'dumbbell';
       $('exRepMin').value = 6;
       $('exRepMax').value = 8;
+      $('exSets').value = 3;
       $('exStep').value = EQUIP.dumbbell.step;
     }
     renderModalSegs();
@@ -2744,6 +2805,7 @@ img, video, canvas, svg { max-width: 100%; }
       equip: isBw ? 'other' : $('exEquip').value,
       startWeight: isBw ? 0 : (parseFloat($('exStartWeight').value) || 0),
       repMin, repMax,
+      sets: Math.max(1, parseInt($('exSets').value, 10) || 3),
       step: isBw ? 1 : (parseFloat($('exStep').value) || incFor({ equip: $('exEquip').value }))
     };
     if (editingExId) {

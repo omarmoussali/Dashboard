@@ -101,7 +101,7 @@ body.topbar-modal-open {
       <path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"></path>
       <path d="M9.5 20v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5"></path>
     </svg>
-    <span class="topbar-home-label">Home</span>
+    <span class="topbar-home-label">Inicio</span>
   </a>
 </header>
 `;

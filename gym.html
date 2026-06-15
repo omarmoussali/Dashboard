@@ -446,6 +446,32 @@ img, video, canvas, svg { max-width: 100%; }
   text-transform: uppercase; color: var(--text-3);
 }
 
+/* ----- Week vs week (progresión semana a semana) ----- */
+.po-wow-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 13px 15px;
+}
+.po-wow-card.win  { border-color: rgba(110,231,183,0.38); background: rgba(110,231,183,0.06); }
+.po-wow-card.flat { border-color: rgba(255,107,107,0.42); background: rgba(255,107,107,0.06); }
+.po-wow-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px; }
+.po-wow-k {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.po-wow-line { font-size: 20px; color: var(--text-1); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.po-wow-line b { color: var(--text-1); font-weight: 700; }
+.po-wow-sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.po-wow-sub b { color: var(--text-1); font-weight: 700; }
+.po-wow-foot { font-size: 12.5px; color: var(--text-3); margin-top: 8px; line-height: 1.45; }
+.po-wow-foot b { color: #6ee7b7; font-weight: 700; }
+.po-wow-card.flat .po-wow-foot { color: #ffb1b1; }
+.po-wow-card.flat .po-wow-foot b { color: #ffb1b1; }
+.po-wow-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.po-wow-badge.win     { color: #6ee7b7; background: rgba(110,231,183,0.15); }
+.po-wow-badge.flat    { color: #ff8585; background: rgba(255,107,107,0.15); }
+.po-wow-badge.pending { color: #F2C063; background: rgba(242,192,99,0.15); }
+
 /* ----- Last set summary ----- */
 .po-last-set {
   display: none; align-items: center; gap: 12px;
@@ -1669,6 +1695,12 @@ img, video, canvas, svg { max-width: 100%; }
       <button class="po-btn-primary" id="logBtn">Log set</button>
     </div>
 
+    <!-- Esta semana vs. la pasada -->
+    <div class="po-sub-section" id="wowSection" style="display:none">
+      <div class="po-sub-title">Esta semana vs. la pasada</div>
+      <div id="weekVsWeek"></div>
+    </div>
+
     <!-- Prescription -->
     <div class="po-sub-section">
       <div class="po-sub-title">Next session</div>
@@ -2072,6 +2104,70 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   // ============================================================
+  // SEMANA A SEMANA — el coach recuerda tu mejor set de la semana
+  // pasada y te obliga a batirlo: más peso O más reps. Igualar o
+  // bajar en AMBOS = sin progreso (lo marca en rojo). Subir solo
+  // reps ya es victoria. Esto vive ENCIMA de la doble progresión:
+  // no la cambia, solo le pone el listón de la semana anterior.
+  // ============================================================
+  function weekStartMs(d) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    const dow = (x.getDay() + 6) % 7; // lunes = 0
+    x.setDate(x.getDate() - dow);
+    return x.getTime();
+  }
+  // "Puntuación" de un set para comparar: 1RM estimado (peso) o reps (BW).
+  function setScore(ex, l) { return ex && ex.bw ? l.reps : estimate1RM(l.weight, l.reps); }
+  // Mejor set dentro de [startMs, endMs).
+  function bestSetBetween(ex, logs, startMs, endMs) {
+    let best = null, bestScore = -Infinity;
+    for (const l of logs) {
+      const t = new Date(l.date).getTime();
+      if (t >= startMs && t < endMs) {
+        const sc = setScore(ex, l);
+        if (sc > bestScore) { bestScore = sc; best = l; }
+      }
+    }
+    return best;
+  }
+  // Mejor de la semana pasada (la semana previa MÁS RECIENTE con datos, así
+  // saltarse una semana no rompe la comparación) vs. mejor de esta semana,
+  // más el veredicto de progreso.
+  function getWeekProgress(ex, logs) {
+    if (!ex || !logs.length) return null;
+    const curStart = weekStartMs(new Date());
+    const thisWeek = bestSetBetween(ex, logs, curStart, Infinity);
+    let prevWeekStart = null;
+    for (const l of logs) {
+      const t = new Date(l.date).getTime();
+      if (t < curStart) {
+        const ws = weekStartMs(new Date(l.date));
+        if (prevWeekStart === null || ws > prevWeekStart) prevWeekStart = ws;
+      }
+    }
+    const lastWeek = prevWeekStart === null ? null
+      : bestSetBetween(ex, logs, prevWeekStart, prevWeekStart + 7 * 86400000);
+    if (!lastWeek) return { lastWeek: null, thisWeek: thisWeek, verdict: 'baseline' };
+    const target = ex.bw
+      ? { bw: true, reps: lastWeek.reps + 1 }
+      : { bw: false, upW: nextWeightUp(lastWeek.weight, ex), sameW: lastWeek.weight, sameWReps: lastWeek.reps + 1 };
+    let verdict = 'pending';
+    if (thisWeek) {
+      const won = ex.bw
+        ? thisWeek.reps > lastWeek.reps
+        : (thisWeek.weight > lastWeek.weight
+           || (thisWeek.weight === lastWeek.weight && thisWeek.reps > lastWeek.reps)
+           || setScore(ex, thisWeek) > setScore(ex, lastWeek));
+      const flat = ex.bw
+        ? thisWeek.reps <= lastWeek.reps
+        : (thisWeek.weight <= lastWeek.weight && thisWeek.reps <= lastWeek.reps);
+      verdict = won ? 'win' : (flat ? 'flat' : 'pending');
+    }
+    return { lastWeek: lastWeek, thisWeek: thisWeek, target: target, verdict: verdict };
+  }
+
+  // ============================================================
   // RENDER
   // ============================================================
   function renderFilters() {
@@ -2171,6 +2267,47 @@ img, video, canvas, svg { max-width: 100%; }
       ? '<span class="po-accent">' + rx.reps + '</span> reps'
       : '<span class="po-accent">' + rx.weight + unit() + '</span> × ' + rx.reps + ' reps';
     wrap.innerHTML = '<div class="po-rx-card po-rx-' + rx.type + '"><div class="po-rx-label">' + escape(ex.name) + '</div><div class="po-rx-headline">' + head + '</div><span class="po-rx-tag ' + rx.type + '">' + rx.tag + '</span><p class="po-rx-reason">' + rx.reason + '</p></div>';
+  }
+  function renderWeekOverWeek() {
+    const sec = $('wowSection');
+    const wrap = $('weekVsWeek');
+    if (!sec || !wrap) return;
+    const ex = getCurrentEx();
+    const logs = ex ? getLogs() : [];
+    const wp = ex ? getWeekProgress(ex, logs) : null;
+    if (!wp) { sec.style.display = 'none'; return; }
+    sec.style.display = '';
+    const u = unit();
+    const fmt = l => ex.bw ? (l.reps + ' reps') : (l.weight + u + ' × ' + l.reps);
+    // Primera semana con el ejercicio: aún no hay listón que batir.
+    if (!wp.lastWeek) {
+      wrap.innerHTML = '<div class="po-wow-card baseline">'
+        + '<div class="po-wow-top"><span class="po-wow-k">Línea base</span></div>'
+        + '<div class="po-wow-line">' + (wp.thisWeek ? '<b>' + fmt(wp.thisWeek) + '</b> esta semana' : 'Sin registrar aún') + '</div>'
+        + '<div class="po-wow-foot">Primera semana con <b>' + escape(ex.name) + '</b>. Marca tu línea base — la semana que viene habrá que batirla.</div></div>';
+      return;
+    }
+    const lw = wp.lastWeek;
+    const targetTxt = ex.bw
+      ? '<b>≥ ' + wp.target.reps + ' reps</b>'
+      : 'sube a <b>' + wp.target.upW + u + '</b>, o mantén ' + lw.weight + u + ' y haz <b>≥ ' + wp.target.sameWReps + ' reps</b>';
+    let badge, foot;
+    if (wp.verdict === 'win') {
+      badge = '<span class="po-wow-badge win">✓ Progreso</span>';
+      foot = '¡Batido! Esto es subir el listón. Sigue así.';
+    } else if (wp.verdict === 'flat') {
+      badge = '<span class="po-wow-badge flat">⚠ Sin progreso</span>';
+      foot = 'Igualaste o bajaste en peso Y reps. Eso no es progresar — antes de cerrar la semana, súbele algo: ' + targetTxt + '.';
+    } else {
+      badge = '<span class="po-wow-badge pending">Pendiente</span>';
+      foot = 'Para ganar la semana: ' + targetTxt + '.';
+    }
+    const thisTxt = wp.thisWeek ? 'Esta semana: <b>' + fmt(wp.thisWeek) + '</b>' : 'Esta semana: aún sin registrar';
+    wrap.innerHTML = '<div class="po-wow-card ' + wp.verdict + '">'
+      + '<div class="po-wow-top"><span class="po-wow-k">La semana pasada</span>' + badge + '</div>'
+      + '<div class="po-wow-line"><b>' + fmt(lw) + '</b></div>'
+      + '<div class="po-wow-sub">' + thisTxt + '</div>'
+      + '<div class="po-wow-foot">' + foot + '</div></div>';
   }
   function renderStats() {
     const ex = getCurrentEx();
@@ -2341,7 +2478,7 @@ img, video, canvas, svg { max-width: 100%; }
     renderWeeklyBadges();
     renderFilters(); renderSelect(); renderForm(); renderLastSet();
     renderRepsRow();
-    renderRx(); renderStats(); renderSparkline(); renderHistory();
+    renderRx(); renderWeekOverWeek(); renderStats(); renderSparkline(); renderHistory();
     renderTodaysWorkout();
     renderPastWorkouts();
     // Pre-fill weight input with last logged weight (or starting weight)

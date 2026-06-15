@@ -1,254 +1,198 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050506">
-<title>Omar's Dashboard</title>
+<title>Inicio · Hoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
 <script src="lock.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
 :root {
-  --text-primary: #FAFAFA;
-  --text-secondary: #B8B6B0;
-  --text-tertiary: #76746E;
-  --success: #6BE3A4;
-  --warning: #F2C063;
-  --danger: #FF6B6B;
-  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-primary:#FAFAFA; --text-secondary:#B8B6B0; --text-tertiary:#76746E;
+  --emerald:#6BE3A4; --emerald-2:#34d399; --emerald-deep:#1f8a5a;
+  --warning:#F2C063; --danger:#FF6B6B;
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
 }
-
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0;
-  background: #050506;
-  color: var(--text-secondary);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-body {
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-  padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(60px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background:
-    radial-gradient(circle at 82% 14%, rgba(224, 118, 88, 0.16), transparent 45%),
-    radial-gradient(circle at 18% 90%, rgba(180, 180, 200, 0.06), transparent 50%);
-  filter: blur(40px);
-  pointer-events: none;
-  z-index: -2;
-  animation: drift 36s ease-in-out infinite alternate;
-}
-body::after {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
-  background-size: 3px 3px;
-  pointer-events: none;
-  z-index: -1;
-}
-@keyframes drift {
-  0%   { transform: translate3d(0,0,0); }
-  100% { transform: translate3d(-22px, 14px, 0); }
-}
-
-.page {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* ===== Page title ===== */
-.dash-title {
-  margin: 0 0 18px;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-@media (max-width: 480px) { .dash-title { font-size: 22px; } }
-
-/* ===== Bento hub grid ===== */
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 168px;
-  grid-auto-flow: dense;
-  gap: 14px;
-}
-
-.bento-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  padding: 20px;
-  text-decoration: none;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.3s ease,
-              box-shadow 0.3s ease;
-}
-.bento-tile:hover,
-.bento-tile:focus-visible {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow: 0 18px 48px rgba(0,0,0,0.5);
-}
-
-.bento-tile.big  { grid-column: span 2; grid-row: span 2; }
-.bento-tile.wide { grid-column: span 2; }
-
-.bento-num {
-  font-family: var(--font-mono);
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--text-tertiary);
-}
-
-.bento-emoji {
-  position: absolute; top: 18px; right: 20px;
-  font-size: 26px; line-height: 1;
-  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 65%, transparent));
-}
-
-.bento-spacer { flex: 1; }
-
-.bento-title {
-  font-size: 17px; font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-top: 10px;
-}
-.bento-tile.big .bento-title { font-size: 21px; }
-
-.bento-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.bento-sub {
-  font-size: 12px;
-  color: var(--text-secondary);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.bento-arrow {
-  flex-shrink: 0;
-  font-size: 16px;
-  color: var(--accent);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.bento-tile:hover .bento-arrow,
-.bento-tile:focus-visible .bento-arrow {
-  transform: translateX(4px);
-}
-
-@media (max-width: 720px) {
-  .bento-grid { grid-template-columns: repeat(2, 1fr); }
-  .bento-tile.big { grid-row: span 1; }
-}
-@media (max-width: 440px) {
-  .bento-grid { grid-template-columns: 1fr; }
-  .bento-tile.big,
-  .bento-tile.wide { grid-column: span 1; }
-}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#050506;color:var(--text-secondary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden;padding:4px max(20px,env(safe-area-inset-right)) max(64px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 78% 8%,rgba(52,211,153,.16),transparent 46%),radial-gradient(circle at 12% 88%,rgba(34,197,134,.10),transparent 52%);filter:blur(46px);pointer-events:none;z-index:-2}
+.page{max-width:640px;margin:0 auto}
+.hd{padding:26px 0 6px}
+.hd h1{margin:0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:40px;color:#EDEAE2;line-height:1.05}
+.hd h1 em{color:var(--emerald)}
+.hd .date{margin-top:6px;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--text-tertiary)}
+.eyebrow{font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary);display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+.eyebrow::before{content:'';width:16px;height:1px;background:var(--text-tertiary);opacity:.6}
+.eyebrow::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.08),transparent)}
+.card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
+/* runway */
+.run{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.run .big{font-family:var(--serif);font-style:italic;font-size:44px;color:var(--text-primary);line-height:1}
+.run .lvl{font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.18em;padding:5px 10px;border-radius:999px;background:rgba(242,192,99,.12);color:var(--warning);border:1px solid rgba(242,192,99,.35)}
+.run .sub{width:100%;font-size:13px;color:var(--text-tertiary);margin-top:4px}
+.run .sub b{color:var(--text-secondary);font-variant-numeric:tabular-nums}
+/* top3 */
+.t3{display:flex;flex-direction:column;gap:10px}
+.t3 label{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:border-color .15s}
+.t3 label:hover{border-color:rgba(107,227,164,.3)}
+.t3 input{appearance:none;width:20px;height:20px;flex:0 0 auto;margin-top:1px;border-radius:7px;border:1.5px solid rgba(255,255,255,.25);background:transparent;cursor:pointer;position:relative}
+.t3 input:checked{background:var(--emerald);border-color:var(--emerald)}
+.t3 input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#04130b;font-size:13px;font-weight:900}
+.t3 .tx{font-size:14.5px;color:var(--text-primary);line-height:1.45}
+.t3 .tx small{display:block;color:var(--text-tertiary);font-size:12px;margin-top:2px}
+.t3 input:checked ~ .tx{opacity:.45;text-decoration:line-through}
+/* quotas */
+.q{display:flex;flex-direction:column;gap:14px}
+.q .row{display:flex;flex-direction:column;gap:6px}
+.q .k{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary)}
+.q .k b{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.q .bar{height:7px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.q .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--emerald-deep),var(--emerald));box-shadow:0 0 12px rgba(107,227,164,.35);transition:width .4s}
+/* sections nav */
+.sec-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.sec-grid{grid-template-columns:1fr}}
+.sec-card{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);text-decoration:none;transition:border-color .15s,transform .15s,background .15s}
+.sec-card:hover{border-color:rgba(107,227,164,.35);background:rgba(107,227,164,.04);transform:translateY(-1px)}
+.sec-card .ic{font-size:22px;flex:0 0 auto;filter:drop-shadow(0 4px 12px rgba(52,211,153,.25))}
+.sec-card .nm{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--text-primary);line-height:1.1}
+.sec-card .ds{font-size:11.5px;color:var(--text-tertiary);margin-top:3px;line-height:1.35}
+.note{margin:18px 0 8px;font-size:12.5px;color:var(--text-tertiary);line-height:1.6;border-left:2px solid rgba(107,227,164,.4);padding-left:12px}
+.note b{color:var(--emerald)}
+.foot{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-tertiary);display:flex;justify-content:space-between}
+.foot a{color:var(--text-tertiary)}
 </style>
 </head>
 <body>
 <div class="page">
+  <header class="hd">
+    <h1>Tu <em>hoy</em>.</h1>
+    <div class="date" id="date"></div>
+  </header>
 
-  <h1 class="dash-title">Dashboard</h1>
-
-  <div class="bento-grid">
-
-    <a class="bento-tile big" href="main.html" style="--accent:#6BE3A4">
-      <span class="bento-num">·01</span>
-      <span class="bento-emoji">🏠</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Main</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Goals &amp; daily plan</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
-    <a class="bento-tile wide" href="gym.html" style="--accent:#7DD3FC">
-      <span class="bento-num">·02</span>
-      <span class="bento-emoji">💪</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Fitness</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Workouts, splits, sessions</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
-    <a class="bento-tile" href="health.html" style="--accent:#A7F3D0">
-      <span class="bento-num">·03</span>
-      <span class="bento-emoji">💊</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Health</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Supplements &amp; vitals</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
-    <a class="bento-tile" href="po-water.html" style="--accent:#60A5FA">
-      <span class="bento-num">·04</span>
-      <span class="bento-emoji">💧</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Water</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Hydration</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
-    <a class="bento-tile wide" href="finance.html" style="--accent:#F2C063">
-      <span class="bento-num">·05</span>
-      <span class="bento-emoji">📊</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Finance</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Net worth &amp; spending</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
-    <a class="bento-tile wide" href="caffeine.html" style="--accent:#C9A36B">
-      <span class="bento-num">·06</span>
-      <span class="bento-emoji">☕</span>
-      <span class="bento-spacer"></span>
-      <span class="bento-title">Caffeine</span>
-      <span class="bento-footer">
-        <span class="bento-sub">Intake &amp; timing</span>
-        <span class="bento-arrow">→</span>
-      </span>
-    </a>
-
+  <div class="eyebrow">Runway</div>
+  <div class="card run">
+    <span class="big" id="run-months"></span>
+    <span class="lvl" id="run-level"></span>
+    <span class="sub"><b id="run-cash"></b> en caja · quema <b id="run-burn"></b>/mes · actualizado <span id="run-upd"></span></span>
   </div>
 
+  <div class="eyebrow">Top 3 de hoy</div>
+  <div class="t3" id="top3"></div>
+
+  <div class="eyebrow">Semana — cuotas</div>
+  <div class="card q" id="quotas"></div>
+
+  <div class="eyebrow">Cuerpo</div>
+  <div class="sec-grid">
+    <a class="sec-card" href="gym.html"><span class="ic">🏋️</span><span><span class="nm">Gym</span><div class="ds">Hipertrofia · doble progresión</div></span></a>
+    <a class="sec-card" href="health.html"><span class="ic">🫀</span><span><span class="nm">Salud</span><div class="ds">Biometría y hábitos</div></span></a>
+    <a class="sec-card" href="po-water.html"><span class="ic">💧</span><span><span class="nm">Agua</span><div class="ds">Hidratación del día</div></span></a>
+    <a class="sec-card" href="caffeine.html"><span class="ic">☕</span><span><span class="nm">Cafeína</span><div class="ds">Dosis y horarios</div></span></a>
+  </div>
+
+  <div class="eyebrow">Dinero</div>
+  <div class="sec-grid">
+    <a class="sec-card" href="finance.html"><span class="ic">🌱</span><span><span class="nm">Finanzas</span><div class="ds">Freedom · patrimonio · metas · suscripciones</div></span></a>
+  </div>
+
+  <div class="eyebrow">Mente</div>
+  <div class="sec-grid">
+    <a class="sec-card" href="main.html"><span class="ic">⛰️</span><span><span class="nm">Peak Today</span><div class="ds">Objetivos · readiness · energía</div></span></a>
+  </div>
+
+  <p class="note" id="note"></p>
+
+  <div class="foot"><span>AIOS · inicio v2</span><span>datos: auto-feed AIOS · en vivo · <a href="hub.html">hub clásico</a></span></div>
 </div>
+
+<script>
+/* ====== DATOS ======
+   Auto-feed EN VIVO desde el AIOS (Supabase · key 'aios_today'). El AIOS empuja
+   las misiones del día con system/scripts/push-today.mjs y esta home las lee al
+   abrir / volver a la pestaña. FALLBACK = último estado conocido, por si no hay
+   red o todavía no se ha empujado nada (la home nunca se queda en blanco). */
+const FALLBACK = {
+  runway: { cash: 738.54, burn: 130, months: 5.7, level: 'TIGHT', updated: '10 jun · saldo real: lun' },
+  top3: [
+    { t: 'Saldo del banco → quema real', s: '30 s: un número y la runway deja de ser papel' },
+    { t: '5 candidaturas — DEUDA DE HONOR', s: 'vencen HOY. El CV (SDR) ya está listo: Harbiz, MIRCoach, 2× InfoJobs' },
+    { t: '/weekly — reset honesto de la semana', s: 'cerrar la W24 del finde y fijar cuotas de la W25' }
+  ],
+  quotas: [
+    { k: 'Candidaturas (deuda)', cur: 0, target: 5 },
+    { k: 'Entrenos', cur: 0, target: 4 },
+    { k: 'Deep work (h)', cur: 0, target: 12 }
+  ],
+  note: 'Mostrando el último estado conocido — esperando el próximo auto-feed del AIOS.'
+};
+const SUPA_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
+const SUPA_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
+const FEED_KEY = 'aios_today';
+/* ======================================================================================= */
+
+const $ = id => document.getElementById(id);
+const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+/* Fecha EN VIVO — la home ya no se queda congelada en una fecha fija. */
+const now = new Date();
+const pad = n => String(n).padStart(2, '0');
+const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+$('date').textContent = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} · ${iso}`;
+
+/* Los checks del Top 3 se guardan por día → se resetean solos cada jornada.
+   El listener se ata UNA vez (delegación sobre #top3, que es estable aunque
+   su contenido se vuelva a pintar al llegar el feed). */
+const lsKey = 'today:' + iso;
+$('top3').addEventListener('change', () => {
+  const state = [...document.querySelectorAll('#top3 input')].map(c => c.checked);
+  localStorage.setItem(lsKey, JSON.stringify(state));
+});
+
+function render(d) {
+  if (!d || !d.runway) return;
+  $('run-months').textContent = String(d.runway.months).replace('.', ',') + ' meses';
+  $('run-level').textContent = d.runway.level;
+  $('run-cash').textContent = Number(d.runway.cash).toLocaleString('es-ES', {style:'currency', currency:'EUR'});
+  $('run-burn').textContent = '~' + d.runway.burn + ' €';
+  $('run-upd').textContent = d.runway.updated;
+
+  const saved = JSON.parse(localStorage.getItem(lsKey) || '[]');
+  $('top3').innerHTML = (d.top3 || []).map((x, i) => `
+    <label><input type="checkbox" data-i="${i}" ${saved[i] ? 'checked' : ''}>
+    <span class="tx">${x.t}<small>${x.s || ''}</small></span></label>`).join('');
+
+  $('quotas').innerHTML = (d.quotas || []).map(q => `
+    <div class="row"><div class="k"><span>${q.k}</span><b>${q.cur} / ${q.target}</b></div>
+    <div class="bar"><div class="fill" style="width:${Math.min(100, q.cur/q.target*100)}%"></div></div></div>`).join('');
+
+  $('note').innerHTML = d.note || '';
+}
+
+/* Pinta YA con el fallback (nunca en blanco), luego trae el feed en vivo. */
+render(FALLBACK);
+async function pull() {
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/app_state?select=data&key=eq.' + FEED_KEY, {
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    });
+    if (!r.ok) return;
+    const rows = await r.json();
+    if (Array.isArray(rows) && rows[0] && rows[0].data && Object.keys(rows[0].data).length) {
+      render(rows[0].data);
+    }
+  } catch (e) {}
+}
+pull();
+/* Al volver a la pestaña (por la mañana, al abrir el móvil) → se refresca solo. */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+</script>
 </body>
 </html>

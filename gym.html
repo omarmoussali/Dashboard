@@ -421,6 +421,26 @@ img, video, canvas, svg { max-width: 100%; }
   font-size: 13px; color: var(--text-3); margin-top: 10px;
 }
 
+/* ----- Variant chips — same movement, different equipment. Tap to swap
+   without hunting the dropdown; weight/reps stay tracked per variant
+   since a cable and a dumbbell don't load the same. ----- */
+.po-variant-row {
+  display: none; gap: 6px; margin-top: 8px;
+  overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch;
+}
+.po-variant-row.show { display: flex; }
+.po-variant-chip {
+  flex: 0 0 auto; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-2); font-size: 11.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.po-variant-chip.active { background: rgba(110,231,183,0.14); border-color: rgba(110,231,183,0.4); color: #6ee7b7; }
+.po-variant-chip.po-variant-add { border-style: dashed; color: var(--text-3); }
+.po-variant-chip.po-variant-add:hover { color: var(--text-1); border-color: var(--border-strong); }
+
 /* ----- Bodyweight banner ----- */
 .po-bw-banner {
   background: rgba(255,255,255,0.04);
@@ -471,6 +491,22 @@ img, video, canvas, svg { max-width: 100%; }
 .po-wow-badge.win     { color: #6ee7b7; background: rgba(110,231,183,0.15); }
 .po-wow-badge.flat    { color: #ff8585; background: rgba(255,107,107,0.15); }
 .po-wow-badge.pending { color: #F2C063; background: rgba(242,192,99,0.15); }
+.po-wow-vol { font-size: 12.5px; }
+
+/* Barritas de volumen semanal — 6 semanas, la actual resaltada. Progreso
+   que se lee de un vistazo en el móvil, no solo en texto. */
+.po-wow-bars {
+  display: flex; align-items: flex-end; gap: 5px;
+  height: 44px; margin-top: 12px; padding-top: 4px;
+}
+.po-wow-bar-col { flex: 1 1 0; display: flex; justify-content: center; }
+.po-wow-bar {
+  width: 100%; max-width: 16px; border-radius: 4px 4px 2px 2px;
+  background: rgba(255,255,255,0.14);
+  transition: height 0.3s ease;
+}
+.po-wow-bar.cur { background: linear-gradient(180deg, #6ee7b7, #34d399); box-shadow: 0 0 10px rgba(110,231,183,0.35); }
+.po-wow-card.flat .po-wow-bar.cur { background: linear-gradient(180deg, #ff8585, #ff6b6b); box-shadow: 0 0 10px rgba(255,107,107,0.3); }
 
 /* ----- Last set summary ----- */
 .po-last-set {
@@ -1442,6 +1478,21 @@ img, video, canvas, svg { max-width: 100%; }
 }
 
 .hidden { display: none !important; }
+
+/* ----- PR flash toast — el momento de celebración al batir un récord de
+   siempre en un ejercicio. Fixed + animación pop/fade, por encima de todo. ----- */
+.po-pr-flash {
+  position: fixed; left: 50%; top: 18px; z-index: 300;
+  transform: translate(-50%, -12px) scale(0.9);
+  padding: 12px 22px; border-radius: 999px;
+  background: linear-gradient(180deg, #fff7e6, #ffe6a8);
+  color: #4a3200; font-family: inherit; font-size: 14px; font-weight: 800;
+  letter-spacing: 0.01em; white-space: nowrap;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.6) inset;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
+}
+.po-pr-flash.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1651,6 +1702,7 @@ img, video, canvas, svg { max-width: 100%; }
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         </button>
       </div>
+      <div class="po-variant-row" id="variantRow"></div>
       <div class="po-no-ex" id="noExMsg" style="display:none">No exercises here yet. Tap <strong>+</strong> to add one.</div>
     </div>
 
@@ -1789,6 +1841,12 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="po-field">
       <label style="font-size:11px;color:var(--text-3);font-weight:700;letter-spacing:0.04em;text-transform:uppercase">Name</label>
       <input type="text" id="exName" placeholder="e.g. Incline DB press">
+    </div>
+    <div class="po-field">
+      <label style="font-size:11px;color:var(--text-3);font-weight:700;letter-spacing:0.04em;text-transform:uppercase">Grupo (variantes) — opcional</label>
+      <input type="text" id="exGroup" list="exGroupList" placeholder="e.g. Aperturas pecho">
+      <datalist id="exGroupList"></datalist>
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.4">Mismo grupo en varios ejercicios (cable, mancuerna, máquina...) = chips para saltar entre ellos sin buscarlos en la lista. El peso se sigue por separado en cada uno.</div>
     </div>
     <div class="po-field">
       <label style="font-size:11px;color:var(--text-3);font-weight:700;letter-spacing:0.04em;text-transform:uppercase">Gym</label>
@@ -1958,6 +2016,9 @@ img, video, canvas, svg { max-width: 100%; }
         else if (e.equip === 'cable') e.step = 5;
       }
       if (e.sets == null) e.sets = defaultSetsFor(e);
+      // Grupo de variantes (misma diana, distinto equipo) — opcional,
+      // lo pone Omar a mano; undefined en datos viejos se normaliza a null.
+      if (e.group === undefined) e.group = null;
       return e;
     });
     // One-time: add the movements that complete an aesthetic physique —
@@ -2046,6 +2107,15 @@ img, video, canvas, svg { max-width: 100%; }
     if (/m[aá]quina|machine|prensa|hack|jal[oó]n|smith/.test(n)) return 'machine';
     return 'other';
   }
+  // Sugerencia de nombre de grupo: quita las palabras de equipo del nombre
+  // del ejercicio ("Aperturas Pecho Cable" → "Aperturas Pecho"). Es solo un
+  // punto de partida editable — nunca se aplica sin que el campo esté vacío.
+  function suggestGroupName(name) {
+    return (name || '')
+      .replace(/\b(mancuernas?|dumbbells?|\bdb\b|cables?|polea|pulley|barras?|barbell|máquina|maquina|machine|smith|\bz\b)\b/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
   function incFor(ex) {
     if (ex && typeof ex.step === 'number' && ex.step > 0) return ex.step;
     const e = ex && EQUIP[ex.equip];
@@ -2075,16 +2145,26 @@ img, video, canvas, svg { max-width: 100%; }
   // to the bottom of the range. Growth happens across 6-20+ reps as long as
   // sets are taken close to failure, so the trigger is the rep range itself,
   // not a single global number.
+  //
+  // Reference point = the TOP set of the MOST RECENT SESSION (grouped by
+  // day), never just "whatever was logged last". Logging order inside a
+  // session (top set first, back-off sets after) used to skew this: the
+  // literal last entry could be a lighter back-off set, feeding the coach
+  // a weaker number than what was actually lifted that day.
   function getRx(ex, logs) {
     if (!logs.length) return null;
-    const last = logs[logs.length - 1];
-    const { weight, reps } = last;
+    const sessions = sessionsOf(ex, logs);
+    if (!sessions.length) return null;
+    const lastSession = sessions[sessions.length - 1];
+    const { weight, reps } = lastSession.top;
     const { repMin, repMax, bw } = ex;
     const step = incFor(ex);
     const upgradeAt = Math.max(repMin + 1, repMax); // top of this exercise's range
+    // Consecutive SESSIONS (not individual sets) stuck at this top-set weight —
+    // 3 sets logged at 60 kg in one session is 1 stuck session, not 3.
     let stuck = 0;
-    for (let i = logs.length - 1; i >= 0; i--) {
-      if (logs[i].weight === weight) stuck++; else break;
+    for (let i = sessions.length - 1; i >= 0; i--) {
+      if (sessions[i].top.weight === weight) stuck++; else break;
     }
     if (bw) {
       if (reps >= upgradeAt) return { type: 'up', weight: 0, reps: reps + 1, tag: 'Push for more', reason: reps + ' reps — strong. Push for ' + (reps + 1) + ' next time, last set near failure.', bw: true };
@@ -2104,11 +2184,43 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   // ============================================================
-  // SEMANA A SEMANA — el coach recuerda tu mejor set de la semana
-  // pasada y te obliga a batirlo: más peso O más reps. Igualar o
-  // bajar en AMBOS = sin progreso (lo marca en rojo). Subir solo
-  // reps ya es victoria. Esto vive ENCIMA de la doble progresión:
-  // no la cambia, solo le pone el listón de la semana anterior.
+  // SESIONES — agrupa los sets sueltos por día (una sesión real de
+  // gimnasio) y calcula, por sesión: el set TOP (mayor 1RM estimado,
+  // o reps si es BW) y el VOLUMEN total (Σ peso×reps, o Σ reps en
+  // BW). El resto del motor (getRx, semana-a-semana, gráfica) se
+  // apoya en esto en vez de leer sets sueltos sin contexto de sesión.
+  // ============================================================
+  // "Puntuación" de un set para comparar: 1RM estimado (peso) o reps (BW).
+  function setScore(ex, l) { return ex && ex.bw ? l.reps : estimate1RM(l.weight, l.reps); }
+  function setVolume(ex, l) { return ex && ex.bw ? (l.reps || 0) : (l.weight || 0) * (l.reps || 0); }
+  function sessionsOf(ex, logs) {
+    const byDay = {};
+    logs.forEach(l => {
+      const dk = (l.date || '').slice(0, 10);
+      if (!dk) return;
+      (byDay[dk] = byDay[dk] || []).push(l);
+    });
+    return Object.keys(byDay).sort().map(dk => {
+      const sets = byDay[dk];
+      let top = sets[0], topScore = setScore(ex, sets[0]), vol = 0;
+      sets.forEach(s => {
+        const sc = setScore(ex, s);
+        if (sc > topScore) { top = s; topScore = sc; }
+        vol += setVolume(ex, s);
+      });
+      return { dateKey: dk, sets: sets, top: top, vol: vol };
+    }); // ordenado OLDEST → NEWEST (el string YYYY-MM-DD ordena bien)
+  }
+
+  // ============================================================
+  // SEMANA A SEMANA — el coach recuerda la semana pasada y exige
+  // batirla, pero "batirla" ya no depende solo del set top: cuenta
+  // también el VOLUMEN semanal (todas las series, no solo la mejor).
+  // Bajar el peso pero sumar más reps/series — más volumen total —
+  // cuenta como progreso real, que es justo lo que pasa en la sala:
+  // a veces renta más hacer menos kilos porque las reps se suman.
+  // Solo se marca "sin progreso" si NI el set top NI el volumen
+  // semanal mejoraron.
   // ============================================================
   function weekStartMs(d) {
     const x = new Date(d);
@@ -2117,54 +2229,67 @@ img, video, canvas, svg { max-width: 100%; }
     x.setDate(x.getDate() - dow);
     return x.getTime();
   }
-  // "Puntuación" de un set para comparar: 1RM estimado (peso) o reps (BW).
-  function setScore(ex, l) { return ex && ex.bw ? l.reps : estimate1RM(l.weight, l.reps); }
-  // Mejor set dentro de [startMs, endMs).
-  function bestSetBetween(ex, logs, startMs, endMs) {
+  function weekVol(sessions, startMs, endMs) {
+    return sessions.filter(s => { const t = wtParseKey(s.dateKey).getTime(); return t >= startMs && t < endMs; })
+      .reduce((sum, s) => sum + s.vol, 0);
+  }
+  function weekTop(ex, sessions, startMs, endMs) {
     let best = null, bestScore = -Infinity;
-    for (const l of logs) {
-      const t = new Date(l.date).getTime();
+    sessions.forEach(s => {
+      const t = wtParseKey(s.dateKey).getTime();
       if (t >= startMs && t < endMs) {
-        const sc = setScore(ex, l);
-        if (sc > bestScore) { bestScore = sc; best = l; }
+        const sc = setScore(ex, s.top);
+        if (sc > bestScore) { bestScore = sc; best = s.top; }
       }
-    }
+    });
     return best;
   }
-  // Mejor de la semana pasada (la semana previa MÁS RECIENTE con datos, así
-  // saltarse una semana no rompe la comparación) vs. mejor de esta semana,
-  // más el veredicto de progreso.
+  // Últimas N semanas de volumen para la gráfica de barras — oldest→newest,
+  // longitud = weeksBack, la semana actual es siempre la última barra.
+  function weeklyVolumeHistory(ex, logs, weeksBack) {
+    const sessions = sessionsOf(ex, logs);
+    const curStart = weekStartMs(new Date());
+    const out = [];
+    for (let i = weeksBack - 1; i >= 0; i--) {
+      const ws = curStart - i * 7 * 86400000;
+      out.push({ weekStart: ws, vol: weekVol(sessions, ws, ws + 7 * 86400000) });
+    }
+    return out;
+  }
   function getWeekProgress(ex, logs) {
     if (!ex || !logs.length) return null;
+    const sessions = sessionsOf(ex, logs);
     const curStart = weekStartMs(new Date());
-    const thisWeek = bestSetBetween(ex, logs, curStart, Infinity);
+    const thisTop = weekTop(ex, sessions, curStart, Infinity);
+    const thisVol = weekVol(sessions, curStart, Infinity);
     let prevWeekStart = null;
-    for (const l of logs) {
-      const t = new Date(l.date).getTime();
+    sessions.forEach(s => {
+      const t = wtParseKey(s.dateKey).getTime();
       if (t < curStart) {
-        const ws = weekStartMs(new Date(l.date));
+        const ws = weekStartMs(wtParseKey(s.dateKey));
         if (prevWeekStart === null || ws > prevWeekStart) prevWeekStart = ws;
       }
+    });
+    if (prevWeekStart === null) {
+      return { lastTop: null, verdict: 'baseline', thisTop: thisTop, thisVol: thisVol };
     }
-    const lastWeek = prevWeekStart === null ? null
-      : bestSetBetween(ex, logs, prevWeekStart, prevWeekStart + 7 * 86400000);
-    if (!lastWeek) return { lastWeek: null, thisWeek: thisWeek, verdict: 'baseline' };
+    const lastTop = weekTop(ex, sessions, prevWeekStart, prevWeekStart + 7 * 86400000);
+    const lastVol = weekVol(sessions, prevWeekStart, prevWeekStart + 7 * 86400000);
     const target = ex.bw
-      ? { bw: true, reps: lastWeek.reps + 1 }
-      : { bw: false, upW: nextWeightUp(lastWeek.weight, ex), sameW: lastWeek.weight, sameWReps: lastWeek.reps + 1 };
+      ? { bw: true, reps: lastTop.reps + 1 }
+      : { bw: false, upW: nextWeightUp(lastTop.weight, ex), sameW: lastTop.weight, sameWReps: lastTop.reps + 1 };
     let verdict = 'pending';
-    if (thisWeek) {
-      const won = ex.bw
-        ? thisWeek.reps > lastWeek.reps
-        : (thisWeek.weight > lastWeek.weight
-           || (thisWeek.weight === lastWeek.weight && thisWeek.reps > lastWeek.reps)
-           || setScore(ex, thisWeek) > setScore(ex, lastWeek));
-      const flat = ex.bw
-        ? thisWeek.reps <= lastWeek.reps
-        : (thisWeek.weight <= lastWeek.weight && thisWeek.reps <= lastWeek.reps);
-      verdict = won ? 'win' : (flat ? 'flat' : 'pending');
+    if (thisTop) {
+      const topWin = ex.bw
+        ? thisTop.reps > lastTop.reps
+        : (thisTop.weight > lastTop.weight
+           || (thisTop.weight === lastTop.weight && thisTop.reps > lastTop.reps)
+           || setScore(ex, thisTop) > setScore(ex, lastTop));
+      // +2% de margen para no marcar "victoria" por ruido de redondeo.
+      const volWin = lastVol > 0 ? thisVol > lastVol * 1.02 : thisVol > 0;
+      verdict = (topWin || volWin) ? 'win' : 'flat';
     }
-    return { lastWeek: lastWeek, thisWeek: thisWeek, target: target, verdict: verdict };
+    return { lastTop: lastTop, lastVol: lastVol, thisTop: thisTop, thisVol: thisVol, target: target, verdict: verdict };
   }
 
   // ============================================================
@@ -2205,11 +2330,47 @@ img, video, canvas, svg { max-width: 100%; }
     sel.disabled = false; editBtn.disabled = false; logBtn.disabled = false;
     noMsg.style.display = 'none';
     if (!f.find(e => e.id === state.currentEx)) state.currentEx = f[0].id;
-    sel.innerHTML = f.map(e => {
+    // Ejercicios agrupados (variantes) van bajo un <optgroup> con el nombre
+    // del grupo; los sueltos se quedan planos arriba, como siempre.
+    const opt = e => {
       const wLbl = e.bw ? ' · BW' : (e.startWeight ? ' · ' + e.startWeight + unit() : '');
       const sh = e.gym === 'both' ? ' ★' : '';
       return '<option value="' + e.id + '"' + (e.id === state.currentEx ? ' selected' : '') + '>' + escape(e.name) + wLbl + sh + '</option>';
-    }).join('');
+    };
+    const flat = [], grouped = {};
+    f.forEach(e => { if (e.group) (grouped[e.group] = grouped[e.group] || []).push(e); else flat.push(e); });
+    let html = flat.map(opt).join('');
+    Object.keys(grouped).sort().forEach(g => {
+      html += '<optgroup label="' + escape(g) + '">' + grouped[g].map(opt).join('') + '</optgroup>';
+    });
+    sel.innerHTML = html;
+  }
+  // Chips de variante bajo el selector: si el ejercicio actual tiene grupo
+  // y hay más de uno en el mismo día/gimnasio, permite saltar entre ellos
+  // en un toque — "no me tengo que limitar a una". El botón final abre el
+  // modal de añadir precargado con el mismo grupo/día/reps, solo cambia
+  // el equipo y el peso de partida.
+  function renderVariantChips() {
+    const wrap = $('variantRow');
+    if (!wrap) return;
+    const ex = getCurrentEx();
+    if (!ex || !ex.group) { wrap.classList.remove('show'); wrap.innerHTML = ''; return; }
+    const sibs = state.exercises.filter(e =>
+      e.group === ex.group && e.day === ex.day &&
+      (e.gym === ex.gym || e.gym === 'both' || ex.gym === 'both'));
+    if (sibs.length < 2) { wrap.classList.remove('show'); wrap.innerHTML = ''; return; }
+    wrap.classList.add('show');
+    wrap.innerHTML = sibs.map(s => {
+      const label = s.bw ? 'BW' : ((EQUIP[s.equip] && EQUIP[s.equip].label.split(' —')[0]) || 'Otro');
+      return '<button type="button" class="po-variant-chip' + (s.id === ex.id ? ' active' : '') + '" data-id="' + s.id + '">' + escape(label) + '</button>';
+    }).join('') + '<button type="button" class="po-variant-chip po-variant-add" id="addVariantBtn">+ variante</button>';
+    wrap.querySelectorAll('.po-variant-chip[data-id]').forEach(b => {
+      b.addEventListener('click', () => { state.currentEx = b.dataset.id; saveState(); renderAll(); });
+    });
+    const addBtn = $('addVariantBtn');
+    if (addBtn) addBtn.addEventListener('click', () => openExModal('add', null, {
+      group: ex.group, day: ex.day, gym: ex.gym, repMin: ex.repMin, repMax: ex.repMax, sets: ex.sets
+    }));
   }
   function renderForm() {
     const ex = getCurrentEx();
@@ -2278,36 +2439,58 @@ img, video, canvas, svg { max-width: 100%; }
     if (!wp) { sec.style.display = 'none'; return; }
     sec.style.display = '';
     const u = unit();
-    const fmt = l => ex.bw ? (l.reps + ' reps') : (l.weight + u + ' × ' + l.reps);
+    const fmtSet = s => ex.bw ? (s.reps + ' reps') : (s.weight + u + ' × ' + s.reps);
+    const fmtVol = v => ex.bw ? (Math.round(v) + ' reps') : (Math.round(v).toLocaleString() + ' ' + u);
+
+    // Mini gráfica de barras — volumen de las últimas 6 semanas, la actual
+    // resaltada. Es el "progreso interactivo" que se ve de un vistazo, sin
+    // leer números: la barra sube, motiva; se estanca, se nota también.
+    const bars = weeklyVolumeHistory(ex, logs, 6);
+    const maxVol = Math.max.apply(null, bars.map(b => b.vol).concat([1]));
+    const barsHtml = '<div class="po-wow-bars">' + bars.map((b, i) => {
+      const h = Math.max(3, Math.round((b.vol / maxVol) * 40));
+      const isCur = i === bars.length - 1;
+      return '<div class="po-wow-bar-col"><div class="po-wow-bar' + (isCur ? ' cur' : '') + '" style="height:' + h + 'px" title="' + fmtVol(b.vol) + '"></div></div>';
+    }).join('') + '</div>';
+
     // Primera semana con el ejercicio: aún no hay listón que batir.
-    if (!wp.lastWeek) {
+    if (!wp.lastTop) {
       wrap.innerHTML = '<div class="po-wow-card baseline">'
         + '<div class="po-wow-top"><span class="po-wow-k">Línea base</span></div>'
-        + '<div class="po-wow-line">' + (wp.thisWeek ? '<b>' + fmt(wp.thisWeek) + '</b> esta semana' : 'Sin registrar aún') + '</div>'
-        + '<div class="po-wow-foot">Primera semana con <b>' + escape(ex.name) + '</b>. Marca tu línea base — la semana que viene habrá que batirla.</div></div>';
+        + '<div class="po-wow-line">' + (wp.thisTop ? '<b>' + fmtSet(wp.thisTop) + '</b> esta semana' : 'Sin registrar aún') + '</div>'
+        + (wp.thisVol ? '<div class="po-wow-sub">Volumen: <b>' + fmtVol(wp.thisVol) + '</b></div>' : '')
+        + '<div class="po-wow-foot">Primera semana con <b>' + escape(ex.name) + '</b>. Marca tu línea base — la semana que viene habrá que batirla.</div>'
+        + barsHtml + '</div>';
       return;
     }
-    const lw = wp.lastWeek;
+    const lt = wp.lastTop;
     const targetTxt = ex.bw
       ? '<b>≥ ' + wp.target.reps + ' reps</b>'
-      : 'sube a <b>' + wp.target.upW + u + '</b>, o mantén ' + lw.weight + u + ' y haz <b>≥ ' + wp.target.sameWReps + ' reps</b>';
+      : 'sube a <b>' + wp.target.upW + u + '</b>, o mantén ' + lt.weight + u + ' y suma volumen (más series o reps)';
+    const volDelta = wp.lastVol > 0 ? Math.round(((wp.thisVol - wp.lastVol) / wp.lastVol) * 100) : null;
+    const volDeltaTxt = volDelta === null ? '' : (volDelta >= 0 ? ' (+' + volDelta + '%)' : ' (' + volDelta + '%)');
     let badge, foot;
     if (wp.verdict === 'win') {
       badge = '<span class="po-wow-badge win">✓ Progreso</span>';
-      foot = '¡Batido! Esto es subir el listón. Sigue así.';
+      foot = (wp.thisTop && setScore(ex, wp.thisTop) > setScore(ex, lt))
+        ? 'Set top batido. Sigue así.'
+        : 'Set top igual o menor, pero MÁS volumen total' + volDeltaTxt + ' — las reps compensan el peso. Eso también es progresar.';
     } else if (wp.verdict === 'flat') {
       badge = '<span class="po-wow-badge flat">⚠ Sin progreso</span>';
-      foot = 'Igualaste o bajaste en peso Y reps. Eso no es progresar — antes de cerrar la semana, súbele algo: ' + targetTxt + '.';
+      foot = 'Ni el set top ni el volumen total mejoraron' + volDeltaTxt + '. Antes de cerrar la semana, súbele algo: ' + targetTxt + '.';
     } else {
       badge = '<span class="po-wow-badge pending">Pendiente</span>';
-      foot = 'Para ganar la semana: ' + targetTxt + '.';
+      foot = 'Para ganar la semana: ' + targetTxt + ' — o simplemente más volumen total que la semana pasada.';
     }
-    const thisTxt = wp.thisWeek ? 'Esta semana: <b>' + fmt(wp.thisWeek) + '</b>' : 'Esta semana: aún sin registrar';
+    const thisTxt = wp.thisTop ? 'Esta semana: <b>' + fmtSet(wp.thisTop) + '</b>' : 'Esta semana: aún sin registrar';
+    const volTxt = 'Volumen: <b>' + fmtVol(wp.lastVol) + '</b> → <b>' + fmtVol(wp.thisVol) + '</b>' + volDeltaTxt;
     wrap.innerHTML = '<div class="po-wow-card ' + wp.verdict + '">'
       + '<div class="po-wow-top"><span class="po-wow-k">La semana pasada</span>' + badge + '</div>'
-      + '<div class="po-wow-line"><b>' + fmt(lw) + '</b></div>'
+      + '<div class="po-wow-line"><b>' + fmtSet(lt) + '</b></div>'
       + '<div class="po-wow-sub">' + thisTxt + '</div>'
-      + '<div class="po-wow-foot">' + foot + '</div></div>';
+      + '<div class="po-wow-sub po-wow-vol">' + volTxt + '</div>'
+      + '<div class="po-wow-foot">' + foot + '</div>'
+      + barsHtml + '</div>';
   }
   function renderStats() {
     const ex = getCurrentEx();
@@ -2476,7 +2659,7 @@ img, video, canvas, svg { max-width: 100%; }
   function renderAll() {
     renderDayPill();
     renderWeeklyBadges();
-    renderFilters(); renderSelect(); renderForm(); renderLastSet();
+    renderFilters(); renderSelect(); renderVariantChips(); renderForm(); renderLastSet();
     renderRepsRow();
     renderRx(); renderWeekOverWeek(); renderStats(); renderSparkline(); renderHistory();
     renderTodaysWorkout();
@@ -2838,7 +3021,12 @@ img, video, canvas, svg { max-width: 100%; }
     const w = ex.bw ? 0 : (parseFloat($('weightInput').value) || 0);
     if (!ex.bw && w <= 0) { alert('Enter a weight.'); return; }
     const arr = state.logs[ex.id] || [];
-    arr.push({ weight: w, reps: reps, date: new Date().toISOString() });
+    // PR check ANTES de guardar: ¿había ya un mejor set, y el nuevo lo bate?
+    // El primer log de un ejercicio es línea base, no un PR — nada que batir.
+    const prevBest = arr.length ? Math.max.apply(null, arr.map(l => setScore(ex, l))) : null;
+    const newLog = { weight: w, reps: reps, date: new Date().toISOString() };
+    const isPR = prevBest !== null && setScore(ex, newLog) > prevBest;
+    arr.push(newLog);
     state.logs[ex.id] = arr;
     saveState(); renderAll();
     // Strength changed → composition estimate may shift
@@ -2848,7 +3036,25 @@ img, video, canvas, svg { max-width: 100%; }
     btn.style.transition = 'transform 0.15s';
     btn.style.transform = 'scale(0.96)';
     setTimeout(() => { btn.style.transform = ''; }, 160);
+    // PR de todos los tiempos → el momento que merece una celebración
+    // visible, no solo un número que cambia en una tarjeta que hay que
+    // ir a mirar. Esto es el "progreso interactivo" que motiva.
+    if (isPR) showPrFlash(ex.bw ? ('🏆 PR — ' + reps + ' reps') : ('🏆 PR — ' + w + unit() + ' × ' + reps));
   });
+  let prFlashEl = null;
+  function showPrFlash(text) {
+    if (!prFlashEl) {
+      prFlashEl = document.createElement('div');
+      prFlashEl.className = 'po-pr-flash';
+      document.body.appendChild(prFlashEl);
+    }
+    prFlashEl.textContent = text;
+    prFlashEl.classList.remove('show');
+    void prFlashEl.offsetWidth; // reinicia la animación si se dispara dos veces seguidas
+    prFlashEl.classList.add('show');
+    clearTimeout(prFlashEl._t);
+    prFlashEl._t = setTimeout(() => prFlashEl.classList.remove('show'), 2200);
+  }
 
   // ============================================================
   // EXERCISE MODAL (add / edit)
@@ -2877,12 +3083,24 @@ img, video, canvas, svg { max-width: 100%; }
       });
     });
   }
-  function openExModal(mode, ex) {
+  // Datalist de grupos existentes, para que el campo "Grupo" ofrezca
+  // autocompletar en vez de obligar a escribirlo igual cada vez.
+  function renderGroupDatalist() {
+    const dl = $('exGroupList');
+    if (!dl) return;
+    const groups = Array.from(new Set(state.exercises.map(e => e.group).filter(Boolean))).sort();
+    dl.innerHTML = groups.map(g => '<option value="' + escape(g) + '">').join('');
+  }
+  // prefill (solo en modo 'add'): precarga grupo/día/gimnasio/reps/series
+  // desde un ejercicio hermano — así "+ variante" solo pide nombre, equipo
+  // y peso de partida, no obliga a retecleae el rango de reps.
+  function openExModal(mode, ex, prefill) {
     editingExId = mode === 'edit' ? ex.id : null;
     $('exModalTitle').textContent = mode === 'edit' ? 'Edit exercise' : 'Add exercise';
     $('exDelete').style.display = mode === 'edit' ? 'block' : 'none';
     if (mode === 'edit') {
       $('exName').value = ex.name;
+      $('exGroup').value = ex.group || '';
       modalGym = ex.gym;
       modalDay = ex.day;
       $('exBw').checked = !!ex.bw;
@@ -2894,17 +3112,19 @@ img, video, canvas, svg { max-width: 100%; }
       $('exStep').value = ex.step;
     } else {
       $('exName').value = '';
-      modalGym = state.filterGym;
-      modalDay = state.filterDay;
+      $('exGroup').value = (prefill && prefill.group) || '';
+      modalGym = (prefill && prefill.gym) || state.filterGym;
+      modalDay = (prefill && prefill.day) || state.filterDay;
       $('exBw').checked = false;
       $('exStartWeight').value = 20;
       $('exEquip').value = 'dumbbell';
-      $('exRepMin').value = 6;
-      $('exRepMax').value = 8;
-      $('exSets').value = 3;
+      $('exRepMin').value = (prefill && prefill.repMin) || 6;
+      $('exRepMax').value = (prefill && prefill.repMax) || 8;
+      $('exSets').value = (prefill && prefill.sets) || 3;
       $('exStep').value = EQUIP.dumbbell.step;
     }
     renderModalSegs();
+    renderGroupDatalist();
     toggleBwFields();
     $('exModalBg').classList.add('show');
     setTimeout(() => $('exName').focus(), 60);
@@ -2915,6 +3135,14 @@ img, video, canvas, svg { max-width: 100%; }
     $('exEquipField').style.display = isBw ? 'none' : '';
     $('exStepField').style.display = isBw ? 'none' : '';
   }
+  // Al salir del nombre, si "Grupo" sigue vacío, sugiere uno quitando las
+  // palabras de equipo ("... Cable" → grupo sin "Cable"). Nunca pisa un
+  // valor que Omar ya haya escrito.
+  $('exName').addEventListener('blur', () => {
+    if ($('exGroup').value.trim()) return;
+    const sug = suggestGroupName($('exName').value);
+    if (sug && sug.toLowerCase() !== $('exName').value.trim().toLowerCase()) $('exGroup').value = sug;
+  });
   $('exBw').addEventListener('change', toggleBwFields);
   // Picking equipment auto-fills its real-world increment (still editable
   // for odd machines). "Other" leaves whatever increment is there.
@@ -2938,6 +3166,7 @@ img, video, canvas, svg { max-width: 100%; }
     const repMax = parseInt($('exRepMax').value, 10) || 8;
     const data = {
       name, gym: modalGym, day: modalDay,
+      group: $('exGroup').value.trim() || null,
       bw: isBw,
       equip: isBw ? 'other' : $('exEquip').value,
       startWeight: isBw ? 0 : (parseFloat($('exStartWeight').value) || 0),

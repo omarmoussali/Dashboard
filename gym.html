@@ -467,6 +467,73 @@ img, video, canvas, svg { max-width: 100%; }
   text-transform: uppercase; color: var(--text-3);
 }
 
+/* ----- TU CAMINO: lo que ya llevas hecho (lo primero que se ve) ----- */
+.po-journey {
+  position: relative; overflow: hidden;
+  background: linear-gradient(150deg, rgba(110,231,183,0.10), rgba(125,211,252,0.05) 55%, transparent);
+  border: 1px solid rgba(110,231,183,0.22);
+  border-radius: 18px; padding: 18px 18px 16px; margin-bottom: 14px;
+}
+.po-journey::after {
+  content: ''; position: absolute; inset: -40% -30% auto auto; width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(110,231,183,0.16), transparent 68%);
+  filter: blur(28px); pointer-events: none;
+}
+.po-jr-k {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 9px;
+}
+.po-jr-head { font-size: 15px; line-height: 1.45; color: var(--text-1); position: relative; }
+.po-jr-head b { color: #6ee7b7; font-weight: 700; }
+.po-jr-head .po-jr-em { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
+.po-jr-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; position: relative;
+}
+.po-jr-cell {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 11px; padding: 10px 8px; text-align: center;
+}
+.po-jr-cell-v {
+  font-size: 18px; font-weight: 800; color: var(--text-1); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em; line-height: 1.1;
+}
+.po-jr-cell-v small { font-size: 10px; font-weight: 600; color: var(--text-3); margin-left: 1px; }
+.po-jr-cell-k {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3); margin-top: 4px;
+}
+.po-jr-foot { font-size: 12px; color: var(--text-2); line-height: 1.5; margin-top: 12px; position: relative; }
+.po-jr-foot b { color: #6ee7b7; }
+
+/* Progreso del ejercicio actual: de dónde vienes → dónde estás */
+.po-arc { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.07); position: relative; }
+.po-arc-row { display: flex; align-items: center; gap: 10px; }
+.po-arc-end { flex: 1; min-width: 0; }
+.po-arc-lbl {
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+}
+.po-arc-val { font-size: 15px; font-weight: 700; color: var(--text-1); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.po-arc-val.now { color: #6ee7b7; }
+.po-arc-date { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.po-arc-mid { font-size: 15px; color: var(--text-3); flex: 0 0 auto; }
+.po-arc-gain {
+  flex: 0 0 auto; font-size: 13px; font-weight: 800; color: #6ee7b7;
+  background: rgba(110,231,183,0.14); border-radius: 999px; padding: 4px 10px; white-space: nowrap;
+}
+
+/* Contexto de orden: hoy lo hiciste el 4º, la semana pasada el 1º */
+.po-ctx {
+  display: flex; align-items: flex-start; gap: 7px; margin-top: 9px; padding: 9px 11px;
+  background: rgba(125,211,252,0.07); border: 1px solid rgba(125,211,252,0.20);
+  border-radius: 9px; font-size: 12px; line-height: 1.45; color: #bfe6ff;
+}
+.po-ctx b { color: #e8f6ff; }
+.po-pos-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; vertical-align: middle;
+  background: rgba(255,255,255,0.09); color: var(--text-2);
+}
+
 /* ----- Week vs week (progresión semana a semana) ----- */
 .po-wow-card {
   background: rgba(255,255,255,0.03);
@@ -492,6 +559,10 @@ img, video, canvas, svg { max-width: 100%; }
 .po-wow-badge.win     { color: #6ee7b7; background: rgba(110,231,183,0.15); }
 .po-wow-badge.flat    { color: #ff8585; background: rgba(255,107,107,0.15); }
 .po-wow-badge.pending { color: #F2C063; background: rgba(242,192,99,0.15); }
+.po-wow-badge.context { color: #7DD3FC; background: rgba(125,211,252,0.15); }
+.po-wow-card.context { border-color: rgba(125,211,252,0.34); background: rgba(125,211,252,0.05); }
+.po-wow-card.context .po-wow-foot { color: var(--text-2); }
+.po-wow-card.context .po-wow-foot b { color: #7DD3FC; }
 .po-wow-vol { font-size: 12.5px; }
 
 /* Barritas de volumen semanal — 6 semanas, la actual resaltada. Progreso
@@ -1678,6 +1749,15 @@ img, video, canvas, svg { max-width: 100%; }
     </button>
   </div>
 
+  <!-- TU CAMINO — lo primero que ves al entrar: lo que YA llevas hecho -->
+  <div class="po-journey" id="journeyCard" style="display:none">
+    <div class="po-jr-k">Tu camino</div>
+    <div class="po-jr-head" id="jrHead"></div>
+    <div class="po-jr-grid" id="jrGrid"></div>
+    <div class="po-jr-foot" id="jrFoot"></div>
+    <div class="po-arc" id="jrArc" style="display:none"></div>
+  </div>
+
   <div class="card">
     <!-- Filters -->
     <div class="po-filters">
@@ -2310,8 +2390,128 @@ img, video, canvas, svg { max-width: 100%; }
       // +2% de margen para no marcar "victoria" por ruido de redondeo.
       const volWin = lastVol > 0 ? thisVol > lastVol * 1.02 : thisVol > 0;
       verdict = (topWin || volWin) ? 'win' : 'flat';
+      // ORDEN: si la máquina estaba ocupada y este ejercicio cayó MÁS TARDE
+      // en la sesión, llegas con más fatiga acumulada — igualar en peor
+      // posición NO es estancarse. Se degrada "flat" a "context" para no
+      // castigar un día que en realidad fue bueno.
+      if (verdict === 'flat') {
+        const pLast = posOf(ex.id, lastTop.date), pThis = posOf(ex.id, thisTop.date);
+        if (pLast && pThis && pThis > pLast) verdict = 'context';
+      }
     }
-    return { lastTop: lastTop, lastVol: lastVol, thisTop: thisTop, thisVol: thisVol, target: target, verdict: verdict };
+    const lastPos = lastTop ? posOf(ex.id, lastTop.date) : null;
+    const thisPos = thisTop ? posOf(ex.id, thisTop.date) : null;
+    return { lastTop: lastTop, lastVol: lastVol, thisTop: thisTop, thisVol: thisVol,
+             target: target, verdict: verdict, lastPos: lastPos, thisPos: thisPos };
+  }
+
+  // ============================================================
+  // ORDEN DENTRO DE LA SESIÓN
+  // El orden real depende de qué máquina esté libre, así que comparar
+  // kilos en crudo es injusto: el mismo ejercicio hecho 1º o 5º no se
+  // levanta igual. La posición se DEDUCE de la hora que ya se guarda en
+  // cada log (no hay que rellenar nada nuevo): cuántos ejercicios
+  // distintos se registraron antes ese mismo día.
+  // ============================================================
+  function posOf(exId, iso) {
+    if (!iso) return null;
+    const day = String(iso).slice(0, 10);
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return null;
+    const earlier = new Set();
+    Object.keys(state.logs || {}).forEach(eid => {
+      (state.logs[eid] || []).forEach(l => {
+        if (!l.date || String(l.date).slice(0, 10) !== day) return;
+        if (new Date(l.date).getTime() < t) earlier.add(eid);
+      });
+    });
+    earlier.delete(exId);
+    return earlier.size + 1;
+  }
+  function ordinalEs(n) {
+    return n + 'º';
+  }
+
+  // ============================================================
+  // TU CAMINO — el acumulado que normalmente no se ve nunca.
+  // Todo se calcula de los logs que YA existen: cero campos nuevos
+  // que rellenar. El objetivo es abrir la app y ver de dónde vienes,
+  // no solo qué toca hoy.
+  // ============================================================
+  function exById(id) { return state.exercises.find(e => e.id === id) || null; }
+
+  function allTimeStats() {
+    const days = new Set();
+    let tonnage = 0, prs = 0, firstMs = null, lastMs = null, totalSets = 0;
+    Object.keys(state.logs || {}).forEach(eid => {
+      const ex = exById(eid);
+      const arr = state.logs[eid] || [];
+      if (!arr.length) return;
+      arr.forEach(l => {
+        totalSets++;
+        if (l.date) {
+          days.add(String(l.date).slice(0, 10));
+          const t = new Date(l.date).getTime();
+          if (!isNaN(t)) {
+            if (firstMs === null || t < firstMs) firstMs = t;
+            if (lastMs === null || t > lastMs) lastMs = t;
+          }
+        }
+        if (ex && !ex.bw) tonnage += (l.weight || 0) * (l.reps || 0);
+      });
+      // PRs: recorre las sesiones en orden y cuenta cuántas veces el set top
+      // superó todo lo anterior. La primera sesión es línea base, no PR.
+      if (ex) {
+        const sess = sessionsOf(ex, arr);
+        let best = -Infinity;
+        sess.forEach((s, i) => {
+          const sc = setScore(ex, s.top);
+          if (i > 0 && sc > best) prs++;
+          if (sc > best) best = sc;
+        });
+      }
+    });
+    const weeks = (firstMs && lastMs) ? Math.max(1, Math.round((lastMs - firstMs) / (7 * 86400000)) + 1) : 0;
+    return { sessions: days.size, tonnage: tonnage, prs: prs, weeks: weeks, sets: totalSets, firstMs: firstMs };
+  }
+
+  // El ejercicio donde más ha subido — el titular que motiva.
+  function bestImprovement() {
+    let best = null;
+    Object.keys(state.logs || {}).forEach(eid => {
+      const ex = exById(eid);
+      const arr = state.logs[eid] || [];
+      if (!ex || arr.length < 2) return;
+      const sess = sessionsOf(ex, arr);
+      if (sess.length < 2) return;
+      const firstScore = setScore(ex, sess[0].top);
+      let topScore = -Infinity, topSet = null;
+      sess.forEach(s => { const sc = setScore(ex, s.top); if (sc > topScore) { topScore = sc; topSet = s.top; } });
+      if (!(firstScore > 0) || !topSet) return;
+      const gain = (topScore - firstScore) / firstScore;
+      if (gain > 0 && (!best || gain > best.gain)) {
+        best = { ex: ex, gain: gain, first: sess[0].top, best: topSet };
+      }
+    });
+    return best;
+  }
+
+  // Arco del ejercicio actual: primera sesión → mejor marca.
+  function exerciseArc(ex, logs) {
+    if (!ex || !logs.length) return null;
+    const sess = sessionsOf(ex, logs);
+    if (sess.length < 2) return null;
+    const first = sess[0];
+    let topScore = -Infinity, topSet = null, topKey = null;
+    sess.forEach(s => { const sc = setScore(ex, s.top); if (sc > topScore) { topScore = sc; topSet = s.top; topKey = s.dateKey; } });
+    const firstScore = setScore(ex, first.top);
+    if (!(firstScore > 0) || !topSet) return null;
+    return {
+      first: first.top, firstKey: first.dateKey,
+      best: topSet, bestKey: topKey,
+      gain: (topScore - firstScore) / firstScore,
+      sessions: sess.length
+    };
   }
 
   // ============================================================
@@ -2451,6 +2651,68 @@ img, video, canvas, svg { max-width: 100%; }
       : '<span class="po-accent">' + rx.weight + unit() + '</span> × ' + rx.reps + ' reps';
     wrap.innerHTML = '<div class="po-rx-card po-rx-' + rx.type + '"><div class="po-rx-label">' + escape(ex.name) + '</div><div class="po-rx-headline">' + head + '</div><span class="po-rx-tag ' + rx.type + '">' + rx.tag + '</span><p class="po-rx-reason">' + rx.reason + '</p></div>';
   }
+  const MES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function fmtKeyEs(dk) {
+    const d = wtParseKey(dk);
+    return d.getDate() + ' ' + MES_ES[d.getMonth()];
+  }
+  function fmtSet(ex, l) {
+    if (!l) return '—';
+    return ex.bw ? (l.reps + ' reps') : (l.weight + unit() + ' × ' + l.reps);
+  }
+  function renderJourney() {
+    const card = $('journeyCard');
+    if (!card) return;
+    const st = allTimeStats();
+    if (!st.sessions) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const imp = bestImprovement();
+    let head;
+    if (imp) {
+      head = '<span class="po-jr-em">+' + Math.round(imp.gain * 100) + '%</span> en <b>' + escape(imp.ex.name) + '</b> '
+           + 'desde tu primer día — de ' + fmtSet(imp.ex, imp.first) + ' a ' + fmtSet(imp.ex, imp.best) + '.';
+    } else {
+      head = 'Llevas <b>' + st.sessions + '</b> ' + (st.sessions === 1 ? 'sesión registrada' : 'sesiones registradas') + '. El histórico empieza a construirse.';
+    }
+    $('jrHead').innerHTML = head;
+
+    const ton = st.tonnage >= 1000
+      ? (st.tonnage / 1000).toFixed(1).replace('.', ',') + '<small>t</small>'
+      : Math.round(st.tonnage) + '<small>' + unit() + '</small>';
+    $('jrGrid').innerHTML =
+      '<div class="po-jr-cell"><div class="po-jr-cell-v">' + st.sessions + '</div><div class="po-jr-cell-k">Sesiones</div></div>' +
+      '<div class="po-jr-cell"><div class="po-jr-cell-v">' + ton + '</div><div class="po-jr-cell-k">Movido</div></div>' +
+      '<div class="po-jr-cell"><div class="po-jr-cell-v">' + st.prs + '</div><div class="po-jr-cell-k">Récords</div></div>';
+
+    let foot;
+    if (st.prs > 0) {
+      foot = 'Has batido tu propia marca <b>' + st.prs + (st.prs === 1 ? ' vez' : ' veces') + '</b>'
+           + (st.weeks ? ' en ' + st.weeks + (st.weeks === 1 ? ' semana' : ' semanas') : '') + '. Eso no lo borra un mal día.';
+    } else {
+      foot = 'Aún sin récords batidos — normal al principio. El primero llega solo con aparecer.';
+    }
+    $('jrFoot').innerHTML = foot;
+
+    // Arco del ejercicio seleccionado
+    const ex = getCurrentEx();
+    const arc = ex ? exerciseArc(ex, getLogs()) : null;
+    const arcEl = $('jrArc');
+    if (!arc) { arcEl.style.display = 'none'; arcEl.innerHTML = ''; return; }
+    arcEl.style.display = '';
+    arcEl.innerHTML =
+      '<div class="po-jr-k" style="margin-bottom:8px">' + escape(ex.name) + '</div>' +
+      '<div class="po-arc-row">' +
+        '<div class="po-arc-end"><div class="po-arc-lbl">Empezaste</div>' +
+          '<div class="po-arc-val">' + fmtSet(ex, arc.first) + '</div>' +
+          '<div class="po-arc-date">' + fmtKeyEs(arc.firstKey) + '</div></div>' +
+        '<div class="po-arc-mid">→</div>' +
+        '<div class="po-arc-end"><div class="po-arc-lbl">Tu mejor marca</div>' +
+          '<div class="po-arc-val now">' + fmtSet(ex, arc.best) + '</div>' +
+          '<div class="po-arc-date">' + fmtKeyEs(arc.bestKey) + '</div></div>' +
+        (arc.gain > 0 ? '<div class="po-arc-gain">+' + Math.round(arc.gain * 100) + '%</div>' : '') +
+      '</div>';
+  }
   function renderWeekOverWeek() {
     const sec = $('wowSection');
     const wrap = $('weekVsWeek');
@@ -2497,6 +2759,11 @@ img, video, canvas, svg { max-width: 100%; }
       foot = (wp.thisTop && setScore(ex, wp.thisTop) > setScore(ex, lt))
         ? 'Set top batido. Sigue así.'
         : 'Set top igual o menor, pero MÁS volumen total' + volDeltaTxt + ' — las reps compensan el peso. Eso también es progresar.';
+    } else if (wp.verdict === 'context') {
+      badge = '<span class="po-wow-badge context">≈ En igualdad</span>';
+      foot = 'Números parecidos, pero <b>hoy llegabas más cansado</b>: lo hiciste ' + ordinalEs(wp.thisPos)
+           + ' de la sesión y la semana pasada ' + ordinalEs(wp.lastPos) + '. Sostener la marca en peor posición '
+           + 'no es estancarse. Si quieres el progreso limpio, intenta pillarlo antes la próxima.';
     } else if (wp.verdict === 'flat') {
       badge = '<span class="po-wow-badge flat">⚠ Sin progreso</span>';
       foot = 'Ni el set top ni el volumen total mejoraron' + volDeltaTxt + '. Antes de cerrar la semana, súbele algo: ' + targetTxt + '.';
@@ -2504,13 +2771,25 @@ img, video, canvas, svg { max-width: 100%; }
       badge = '<span class="po-wow-badge pending">Pendiente</span>';
       foot = 'Para ganar la semana: ' + targetTxt + ' — o simplemente más volumen total que la semana pasada.';
     }
-    const thisTxt = wp.thisTop ? 'Esta semana: <b>' + fmtSet(wp.thisTop) + '</b>' : 'Esta semana: aún sin registrar';
+    const posTag = p => p ? '<span class="po-pos-badge">' + ordinalEs(p) + ' de la sesión</span>' : '';
+    const thisTxt = wp.thisTop
+      ? 'Esta semana: <b>' + fmtSet(wp.thisTop) + '</b>' + posTag(wp.thisPos)
+      : 'Esta semana: aún sin registrar';
     const volTxt = 'Volumen: <b>' + fmtVol(wp.lastVol) + '</b> → <b>' + fmtVol(wp.thisVol) + '</b>' + volDeltaTxt;
+    // Aviso de orden en cualquier veredicto donde las posiciones no coincidan:
+    // el dato solo es comparable si llegaste igual de fresco.
+    const ctx = (wp.verdict !== 'context' && wp.lastPos && wp.thisPos && wp.lastPos !== wp.thisPos)
+      ? '<div class="po-ctx">⚖️<span>Posición distinta: ' + ordinalEs(wp.thisPos) + ' hoy vs ' + ordinalEs(wp.lastPos)
+        + ' la semana pasada. ' + (wp.thisPos > wp.lastPos
+            ? 'Hoy llegabas <b>más cansado</b>, así que el número real vale más de lo que marca.'
+            : 'Hoy llegabas <b>más fresco</b>, cuenta con ello antes de cantar victoria.') + '</span></div>'
+      : '';
     wrap.innerHTML = '<div class="po-wow-card ' + wp.verdict + '">'
       + '<div class="po-wow-top"><span class="po-wow-k">La semana pasada</span>' + badge + '</div>'
-      + '<div class="po-wow-line"><b>' + fmtSet(lt) + '</b></div>'
+      + '<div class="po-wow-line"><b>' + fmtSet(lt) + '</b>' + posTag(wp.lastPos) + '</div>'
       + '<div class="po-wow-sub">' + thisTxt + '</div>'
       + '<div class="po-wow-sub po-wow-vol">' + volTxt + '</div>'
+      + ctx
       + '<div class="po-wow-foot">' + foot + '</div>'
       + barsHtml + '</div>';
   }
@@ -2683,6 +2962,7 @@ img, video, canvas, svg { max-width: 100%; }
     renderWeeklyBadges();
     renderFilters(); renderSelect(); renderVariantChips(); renderForm(); renderLastSet();
     renderRepsRow();
+    renderJourney();
     renderRx(); renderWeekOverWeek(); renderStats(); renderSparkline(); renderHistory();
     renderTodaysWorkout();
     renderPastWorkouts();

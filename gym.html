@@ -467,6 +467,17 @@ img, video, canvas, svg { max-width: 100%; }
   text-transform: uppercase; color: var(--text-3);
 }
 
+/* Secciones plegadas: el detalle existe, pero no grita al entrar. */
+details.po-more { border-top: 1px solid rgba(255,255,255,0.06); margin-top: 6px; }
+details.po-more > summary {
+  list-style: none; cursor: pointer; padding: 14px 2px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-3); display: flex; align-items: center;
+}
+details.po-more > summary::-webkit-details-marker { display: none; }
+details.po-more > summary::after { content: '+'; margin-left: auto; font-size: 15px; opacity: 0.7; }
+details.po-more[open] > summary::after { content: '–'; }
+
 /* ----- TU CAMINO: lo que ya llevas hecho (lo primero que se ve) ----- */
 .po-journey {
   position: relative; overflow: hidden;
@@ -1840,6 +1851,10 @@ img, video, canvas, svg { max-width: 100%; }
       <div id="rxWrap"></div>
     </div>
 
+    <!-- Detalle (plegado): números de referencia. No hace falta verlos
+         al entrar — la motivación va arriba y la acción, en el botón. -->
+    <details class="po-more">
+    <summary>Detalle</summary>
     <!-- Stats -->
     <div class="po-sub-section">
       <div class="po-sub-title">Stats</div>
@@ -1882,6 +1897,7 @@ img, video, canvas, svg { max-width: 100%; }
         <div class="po-empty">No logs yet.</div>
       </div>
     </div>
+    </details>
 
     <!-- Today's Workout — every set logged today, grouped by exercise.
          "Mark done" stamps the day so the past-workouts list shows it

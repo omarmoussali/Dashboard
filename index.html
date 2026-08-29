@@ -70,7 +70,26 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .modebar button .sub{display:block;margin-top:3px;font-size:9px;letter-spacing:.06em;opacity:.7;font-weight:600}
 .today-pill{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;font-family:var(--font-mono);font-size:8.5px;font-weight:800;letter-spacing:.08em;background:rgba(107,227,164,.16);color:var(--emerald);vertical-align:middle}
 .wk-intro{font-size:12.5px;color:var(--text-tertiary);line-height:1.6;margin:0 0 12px}
-.note{margin:18px 0 8px;font-size:12.5px;color:var(--text-tertiary);line-height:1.6;border-left:2px solid rgba(107,227,164,.4);padding-left:12px}
+/* Mensaje del día — lo primero y lo más importante que se ve. Aire, poca letra. */
+.msg{margin:22px 0 4px;padding:30px 26px;border-radius:20px;background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.05);position:relative}
+.msg p{margin:0;font-family:var(--serif);font-style:italic;font-weight:400;font-size:20px;line-height:1.55;color:#EDEAE2;letter-spacing:-.01em}
+.msg .msg-k{display:block;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:14px;opacity:.8}
+.msg-more{position:absolute;right:14px;bottom:12px;background:none;border:0;color:var(--text-tertiary);font-size:15px;line-height:1;padding:6px;cursor:pointer;opacity:.35;transition:opacity .15s}
+.msg-more:hover{opacity:.9}
+/* Navegación compacta: iconos en una fila, sin párrafos que leer */
+.navrow{display:flex;gap:8px;margin-top:22px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.navrow::-webkit-scrollbar{display:none}
+.navrow a{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:66px;padding:13px 6px;border-radius:15px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.055);text-decoration:none;transition:border-color .15s,background .15s}
+.navrow a:hover{border-color:rgba(107,227,164,.3);background:rgba(107,227,164,.04)}
+.navrow .ic{font-size:20px;line-height:1}
+.navrow .nm{font-size:10.5px;color:var(--text-secondary);text-align:center;line-height:1.15}
+/* Lo secundario, plegado: números, cuotas y notas no gritan al entrar */
+details.more{margin-top:24px;border-top:1px solid rgba(255,255,255,.055);padding-top:6px}
+details.more>summary{list-style:none;cursor:pointer;padding:12px 2px;font-family:var(--font-mono);font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary);display:flex;align-items:center;gap:8px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::after{content:'+';margin-left:auto;font-size:14px;opacity:.7}
+details.more[open]>summary::after{content:'–'}
+.note{margin:16px 0 4px;font-size:12.5px;color:var(--text-tertiary);line-height:1.6;border-left:2px solid rgba(107,227,164,.35);padding-left:12px}
 .note b{color:var(--emerald)}
 .foot{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-tertiary);display:flex;justify-content:space-between}
 .foot a{color:var(--text-tertiary)}
@@ -83,11 +102,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     <div class="date" id="date"></div>
   </header>
 
-  <div class="eyebrow">Runway</div>
-  <div class="card run">
-    <span class="big" id="run-months"></span>
-    <span class="lvl" id="run-level"></span>
-    <span class="sub"><b id="run-cash"></b> en caja · quema <b id="run-burn"></b>/mes · actualizado <span id="run-upd"></span></span>
+  <div class="msg">
+    <span class="msg-k">Hoy</span>
+    <p id="msgText"></p>
+    <button class="msg-more" id="msgMore" type="button" title="Otro" aria-label="Otro mensaje">↻</button>
   </div>
 
   <div class="modebar" id="modebar">
@@ -96,38 +114,32 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   </div>
 
   <div id="viewWork">
-    <div class="eyebrow">Top 3 de hoy</div>
     <div class="t3" id="top3"></div>
   </div>
 
   <div id="viewWeekend" hidden>
-    <div class="eyebrow">Finde — imagen, marca y recuperación</div>
-    <p class="wk-intro">Los findes no son sobras del trabajo: son el único hueco donde se construye lo que no da dinero hoy pero lo dará. Y el descanso cuenta como trabajo — cinco días de 12 h se pagan en algún sitio.</p>
     <div class="t3" id="weekend"></div>
   </div>
 
-  <div class="eyebrow">Semana — cuotas</div>
-  <div class="card q" id="quotas"></div>
+  <nav class="navrow">
+    <a href="gym.html"><span class="ic">🏋️</span><span class="nm">Gym</span></a>
+    <a href="health.html"><span class="ic">🫀</span><span class="nm">Salud</span></a>
+    <a href="finance.html"><span class="ic">🌱</span><span class="nm">Dinero</span></a>
+    <a href="po-water.html"><span class="ic">💧</span><span class="nm">Agua</span></a>
+    <a href="caffeine.html"><span class="ic">☕</span><span class="nm">Café</span></a>
+    <a href="main.html"><span class="ic">⛰️</span><span class="nm">Peak</span></a>
+  </nav>
 
-  <div class="eyebrow">Cuerpo</div>
-  <div class="sec-grid">
-    <a class="sec-card" href="gym.html"><span class="ic">🏋️</span><span><span class="nm">Gym</span><div class="ds">Hipertrofia · doble progresión</div></span></a>
-    <a class="sec-card" href="health.html"><span class="ic">🫀</span><span><span class="nm">Salud</span><div class="ds">Biometría y hábitos</div></span></a>
-    <a class="sec-card" href="po-water.html"><span class="ic">💧</span><span><span class="nm">Agua</span><div class="ds">Hidratación del día</div></span></a>
-    <a class="sec-card" href="caffeine.html"><span class="ic">☕</span><span><span class="nm">Cafeína</span><div class="ds">Dosis y horarios</div></span></a>
-  </div>
-
-  <div class="eyebrow">Dinero</div>
-  <div class="sec-grid">
-    <a class="sec-card" href="finance.html"><span class="ic">🌱</span><span><span class="nm">Finanzas</span><div class="ds">Freedom · patrimonio · metas · suscripciones</div></span></a>
-  </div>
-
-  <div class="eyebrow">Mente</div>
-  <div class="sec-grid">
-    <a class="sec-card" href="main.html"><span class="ic">⛰️</span><span><span class="nm">Peak Today</span><div class="ds">Objetivos · readiness · energía</div></span></a>
-  </div>
-
-  <p class="note" id="note"></p>
+  <details class="more">
+    <summary>Números</summary>
+    <div class="card run">
+      <span class="big" id="run-months"></span>
+      <span class="lvl" id="run-level"></span>
+      <span class="sub"><b id="run-cash"></b> en caja · quema <b id="run-burn"></b>/mes · actualizado <span id="run-upd"></span></span>
+    </div>
+    <div class="card q" id="quotas" style="margin-top:10px"></div>
+    <p class="note" id="note"></p>
+  </details>
 
   <div class="foot"><span>AIOS · inicio v2</span><span>datos: auto-feed AIOS · en vivo · <a href="hub.html">hub clásico</a></span></div>
 </div>
@@ -152,13 +164,54 @@ const FALLBACK = {
   ],
   note: 'Mostrando el último estado conocido — esperando el próximo auto-feed del AIOS.',
   weekend: [
-    { t: 'Preparar el outfit', s: 'Elige y deja listo el conjunto potente — probado, planchado, colgado. Decidirlo el sábado por la mañana mata la sesión' },
-    { t: 'Localizaciones de fotos', s: '2 sitios + hora de luz buena (primera hora o el atardecer). Guárdalos en el móvil antes de salir' },
-    { t: 'Disparar contenido', s: 'Gym · lifestyle · boxeo · música. Tanda grande de una vez → material para varias semanas' },
-    { t: 'Batch de batidos y comida', s: 'Deja la semana montada: gainer, whey, frutos secos preparados. El yo del martes a las 8 h te lo agradece' },
-    { t: 'Descanso real', s: 'Dormir sin alarma un día, estiramientos, cero pantallas antes de dormir. Cinco días de 12 h se pagan en algún sitio' }
+    { t: 'Fotos', s: 'Outfit listo · un sitio · luz de tarde' },
+    { t: 'Dejar la semana montada', s: 'Batidos y comida preparados' },
+    { t: 'Descansar de verdad', s: 'Un día sin alarma' }
   ]
 };
+/* ====== MENSAJE DEL DÍA ======
+   Uno por día, el mismo toda la jornada (cambia solo al cambiar la fecha).
+   Vive aquí dentro a propósito: funciona sin red y sin depender de nadie.
+   Sirven para lo mismo — cortar la rumiación y empujar a hacer lo de hoy.
+   Si el AIOS manda un `mensaje` en el feed, ese manda por encima. */
+const MENSAJES = [
+  'La cabeza da más vueltas cuando el cuerpo está quieto. Muévete primero; el ruido baja solo.',
+  'No tienes que entenderlo todo hoy. Solo tienes que hacer lo de hoy.',
+  'Pensarlo otra vez no te va a dar una respuesta nueva. Ya la tienes.',
+  'Si llevas veinte minutos dándole vueltas, ya no estás pensando. Levántate.',
+  'Hoy no busques tener ganas. Busca empezar. Las ganas vienen después, nunca antes.',
+  'Aparecer los días malos es lo que separa a quien cambia de quien solo lo intenta.',
+  'No tiene que ser tu mejor día. Tiene que ser un día hecho.',
+  'El listón de hoy es bajo: haz una sola cosa bien. Con eso vale.',
+  'Esto no se arregla en una semana. Se arregla en doce. Vas por la primera.',
+  'Dentro de un año esto será una historia que cuentas, no una que te pesa.',
+  'Nadie ve los meses aburridos. Todo el mundo ve el resultado.',
+  'Lo que construyas estos meses no te lo puede quitar nadie.',
+  'Tu valor no lo decide quien se fue. Lo decides tú, y se demuestra con lo que haces.',
+  'Que alguien no supiera cuidarte no dice nada de ti.',
+  'Lo que te aceptes a ti marca lo que vas a aceptar de los demás.',
+  'El dolor no se piensa, se atraviesa. Hoy toca atravesar un día más.',
+  'Estás cansado, no roto. No es lo mismo.',
+  'Los días malos también cuentan como días trabajados.',
+  'Doce horas al volante no son tiempo perdido: son el suelo que te deja levantar todo lo demás.',
+  'Cada día trabajado es un día menos dependiendo de nadie.',
+  'El dinero no te va a quitar la pena, pero sí el miedo. Y con menos miedo se piensa mejor.',
+  'El gimnasio es lo único de hoy que puedes controlar entero. Aprovéchalo.',
+  'Duerme. Es la mitad del tratamiento y es gratis.',
+  'Come aunque no tengas hambre. Tu cabeza también funciona con calorías.',
+  'Hoy no hace falta estar bien. Hace falta estar en marcha.',
+  'El pasado ya no admite cambios. El mes que viene sí.',
+  'Empezar otra vez con lo que ahora sabes no es retroceder.',
+  'Lo que sientes hoy no es lo que vas a sentir siempre.',
+  'No te compares con quien eras hace un mes. Compárate con quien serías si te rindes.',
+  'Tienes gente que te quiere bien. Escríbele a uno hoy.',
+  'Haz la cama, dúchate, sal a la calle. En ese orden. Suena tonto y funciona.',
+  'No estás atrasado en la vida. Estás en tu tramo difícil, que no es lo mismo.',
+  'Cuando no sepas qué hacer, haz lo siguiente pequeño. Solo eso.',
+  'Un año de esto y no te reconoce nadie, empezando por ti.',
+  'Tu trabajo de hoy no tiene que impresionar a nadie. Solo tiene que estar hecho.',
+  'Descansar no es rendirse. Es parte del plan.'
+];
 const SUPA_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
 const SUPA_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
 const FEED_KEY = 'aios_today';
@@ -211,8 +264,21 @@ $('modebar').addEventListener('click', e => {
   applyMode();
 });
 
+/* Índice estable por día: el mismo mensaje toda la jornada. */
+const dayIdx = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 86400000);
+let feedMsg = null, msgOffset = 0;
+function renderMsg() {
+  if (feedMsg && msgOffset === 0) { $('msgText').textContent = feedMsg; return; }
+  const k = msgOffset - (feedMsg ? 1 : 0);
+  const i = ((dayIdx + k) % MENSAJES.length + MENSAJES.length) % MENSAJES.length;
+  $('msgText').textContent = MENSAJES[i];
+}
+$('msgMore').addEventListener('click', () => { msgOffset++; renderMsg(); });
+renderMsg();
+
 function render(d) {
   if (!d || !d.runway) return;
+  if (d.mensaje && d.mensaje !== feedMsg) { feedMsg = d.mensaje; msgOffset = 0; renderMsg(); }
   $('run-months').textContent = String(d.runway.months).replace('.', ',') + ' meses';
   $('run-level').textContent = d.runway.level;
   $('run-cash').textContent = Number(d.runway.cash).toLocaleString('es-ES', {style:'currency', currency:'EUR'});

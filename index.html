@@ -63,6 +63,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .sec-card .ic{font-size:22px;flex:0 0 auto;filter:drop-shadow(0 4px 12px rgba(52,211,153,.25))}
 .sec-card .nm{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--text-primary);line-height:1.1}
 .sec-card .ds{font-size:11.5px;color:var(--text-tertiary);margin-top:3px;line-height:1.35}
+/* mode switch: L–V trabajo vs S–D finde */
+.modebar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:16px;padding:5px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.modebar button{padding:10px 8px;border:0;border-radius:10px;background:transparent;color:var(--text-tertiary);font-family:var(--font-mono);font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s}
+.modebar button.on{background:rgba(107,227,164,.14);color:var(--emerald)}
+.modebar button .sub{display:block;margin-top:3px;font-size:9px;letter-spacing:.06em;opacity:.7;font-weight:600}
+.today-pill{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;font-family:var(--font-mono);font-size:8.5px;font-weight:800;letter-spacing:.08em;background:rgba(107,227,164,.16);color:var(--emerald);vertical-align:middle}
+.wk-intro{font-size:12.5px;color:var(--text-tertiary);line-height:1.6;margin:0 0 12px}
 .note{margin:18px 0 8px;font-size:12.5px;color:var(--text-tertiary);line-height:1.6;border-left:2px solid rgba(107,227,164,.4);padding-left:12px}
 .note b{color:var(--emerald)}
 .foot{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-tertiary);display:flex;justify-content:space-between}
@@ -83,8 +90,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     <span class="sub"><b id="run-cash"></b> en caja · quema <b id="run-burn"></b>/mes · actualizado <span id="run-upd"></span></span>
   </div>
 
-  <div class="eyebrow">Top 3 de hoy</div>
-  <div class="t3" id="top3"></div>
+  <div class="modebar" id="modebar">
+    <button data-mode="work" id="mbWork">L–V · Trabajo<span class="sub">12 h · foco liquidez</span></button>
+    <button data-mode="weekend" id="mbWeekend">S–D · Finde<span class="sub">imagen · marca · descanso</span></button>
+  </div>
+
+  <div id="viewWork">
+    <div class="eyebrow">Top 3 de hoy</div>
+    <div class="t3" id="top3"></div>
+  </div>
+
+  <div id="viewWeekend" hidden>
+    <div class="eyebrow">Finde — imagen, marca y recuperación</div>
+    <p class="wk-intro">Los findes no son sobras del trabajo: son el único hueco donde se construye lo que no da dinero hoy pero lo dará. Y el descanso cuenta como trabajo — cinco días de 12 h se pagan en algún sitio.</p>
+    <div class="t3" id="weekend"></div>
+  </div>
 
   <div class="eyebrow">Semana — cuotas</div>
   <div class="card q" id="quotas"></div>
@@ -130,7 +150,14 @@ const FALLBACK = {
     { k: 'Entrenos', cur: 0, target: 4 },
     { k: 'Deep work (h)', cur: 0, target: 12 }
   ],
-  note: 'Mostrando el último estado conocido — esperando el próximo auto-feed del AIOS.'
+  note: 'Mostrando el último estado conocido — esperando el próximo auto-feed del AIOS.',
+  weekend: [
+    { t: 'Preparar el outfit', s: 'Elige y deja listo el conjunto potente — probado, planchado, colgado. Decidirlo el sábado por la mañana mata la sesión' },
+    { t: 'Localizaciones de fotos', s: '2 sitios + hora de luz buena (primera hora o el atardecer). Guárdalos en el móvil antes de salir' },
+    { t: 'Disparar contenido', s: 'Gym · lifestyle · boxeo · música. Tanda grande de una vez → material para varias semanas' },
+    { t: 'Batch de batidos y comida', s: 'Deja la semana montada: gainer, whey, frutos secos preparados. El yo del martes a las 8 h te lo agradece' },
+    { t: 'Descanso real', s: 'Dormir sin alarma un día, estiramientos, cero pantallas antes de dormir. Cinco días de 12 h se pagan en algún sitio' }
+  ]
 };
 const SUPA_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
 const SUPA_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
@@ -155,6 +182,34 @@ $('top3').addEventListener('change', () => {
   const state = [...document.querySelectorAll('#top3 input')].map(c => c.checked);
   localStorage.setItem(lsKey, JSON.stringify(state));
 });
+/* La lista del finde se guarda por SEMANA (no por día): el sábado y el domingo
+   comparten los mismos recados, así lo tachado el sábado sigue tachado el domingo. */
+const weekKey = (() => {
+  const d = new Date(now); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // lunes de esta semana
+  return 'weekend:' + d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+})();
+$('weekend').addEventListener('change', () => {
+  const state = [...document.querySelectorAll('#weekend input')].map(c => c.checked);
+  localStorage.setItem(weekKey, JSON.stringify(state));
+});
+
+/* Modo: sáb/dom → finde, resto → trabajo. Se puede cambiar a mano para
+   preparar el finde un jueves; no se guarda, cada visita vuelve a lo que toca. */
+const isWeekendToday = (now.getDay() === 0 || now.getDay() === 6);
+let mode = isWeekendToday ? 'weekend' : 'work';
+function applyMode() {
+  $('viewWork').hidden = (mode !== 'work');
+  $('viewWeekend').hidden = (mode !== 'weekend');
+  $('mbWork').classList.toggle('on', mode === 'work');
+  $('mbWeekend').classList.toggle('on', mode === 'weekend');
+}
+$('modebar').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mode]');
+  if (!b) return;
+  mode = b.dataset.mode;
+  applyMode();
+});
 
 function render(d) {
   if (!d || !d.runway) return;
@@ -169,12 +224,19 @@ function render(d) {
     <label><input type="checkbox" data-i="${i}" ${saved[i] ? 'checked' : ''}>
     <span class="tx">${x.t}<small>${x.s || ''}</small></span></label>`).join('');
 
+  const wk = (d.weekend && d.weekend.length) ? d.weekend : FALLBACK.weekend;
+  const savedWk = JSON.parse(localStorage.getItem(weekKey) || '[]');
+  $('weekend').innerHTML = wk.map((x, i) => `
+    <label><input type="checkbox" data-i="${i}" ${savedWk[i] ? 'checked' : ''}>
+    <span class="tx">${x.t}<small>${x.s || ''}</small></span></label>`).join('');
+
   $('quotas').innerHTML = (d.quotas || []).map(q => `
     <div class="row"><div class="k"><span>${q.k}</span><b>${q.cur} / ${q.target}</b></div>
     <div class="bar"><div class="fill" style="width:${Math.min(100, q.cur/q.target*100)}%"></div></div></div>`).join('');
 
   $('note').innerHTML = d.note || '';
 }
+applyMode();
 
 /* Pinta YA con el fallback (nunca en blanco), luego trae el feed en vivo. */
 render(FALLBACK);

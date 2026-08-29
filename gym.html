@@ -25,12 +25,13 @@ const CONFIG = {
     { id: "gym", name: "Gym" }
   ],
 
-  // 4-day hypertrophy split: Push · Lower · Pull · Estética
+  // 4-day hypertrophy split: Push · Lower · Pull · Estética · + Boxeo (iniciación)
   days: [
     { id: "push",     name: "Push"     },
     { id: "lower",    name: "Lower"    },
     { id: "pull",     name: "Pull"     },
-    { id: "estetica", name: "Estética" }
+    { id: "estetica", name: "Estética" },
+    { id: "boxeo",    name: "Boxeo"    }
   ],
 
   // Lunes=Push · Martes=Lower · Miér=rest · Jueves=Pull · Vier=rest · Sáb=Estética · Dom=rest
@@ -2037,6 +2038,27 @@ img, video, canvas, svg { max-width: 100%; }
       ADD.forEach(function (ne, i) {
         if (!s.exercises.some(function (e) { return e.name === ne.name && e.day === ne.day; })) {
           s.exercises.push(Object.assign({ id: 'aes_' + Date.now() + '_' + i, gym: GID, bw: false }, ne));
+        }
+      });
+    }
+    // One-time: BOXEO (iniciación + shadowboxing). Logged as bodyweight work —
+    // the number you log is RONDAS (3 min), not reps, so the same double-progression
+    // + week-over-week engine applies: beat last week's round count. Guarded so
+    // deleting them later won't re-add them.
+    if (!s.boxingV1) {
+      s.boxingV1 = true;
+      const BGID = (s.gyms[0] && s.gyms[0].id) || 'gym';
+      const BOX = [
+        { name: 'Shadowboxing · rondas 3min',   repMin: 3, repMax: 6, sets: 1 },
+        { name: 'Saco Pesado · rondas 3min',    repMin: 3, repMax: 6, sets: 1 },
+        { name: 'Comba / Skipping · rondas',    repMin: 3, repMax: 5, sets: 1 },
+        { name: 'Técnica: Combinaciones · rondas', repMin: 3, repMax: 6, sets: 1 }
+      ];
+      BOX.forEach(function (ne, i) {
+        if (!s.exercises.some(function (e) { return e.name === ne.name && e.day === 'boxeo'; })) {
+          s.exercises.push(Object.assign({
+            id: 'box_' + Date.now() + '_' + i, gym: BGID, day: 'boxeo', bw: true, equip: 'other'
+          }, ne));
         }
       });
     }

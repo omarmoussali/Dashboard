@@ -479,6 +479,48 @@ main {
 .hm-steps-fill { background: linear-gradient(90deg, #7DD3FC, #6ee7b7); }
 .hm-msg { font-size: 13px; color: var(--text-secondary); margin-top: 12px; line-height: 1.4; }
 .hm-msg strong { color: var(--text-primary); }
+
+/* ── Nutrición líquida ─────────────────────────────────────── */
+.nutri-fill { background: linear-gradient(90deg, #C084FC, #6ee7b7); }
+.nutri-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 16px; }
+.nutri-btn {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 11px 13px; border-radius: 12px; cursor: pointer;
+  background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-primary); font-family: inherit; transition: border-color 0.15s, background 0.15s;
+}
+.nutri-btn:hover { border-color: rgba(110,231,183,0.35); background: rgba(110,231,183,0.05); }
+.nutri-btn:active { transform: scale(0.99); }
+.nutri-btn-name { font-size: 13px; font-weight: 600; }
+.nutri-btn-meta { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); }
+.nutri-log { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.nutri-row {
+  display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+  padding: 8px 11px; border-radius: 9px; background: rgba(255,255,255,0.025);
+}
+.nutri-row-name { flex: 1; color: var(--text-primary); }
+.nutri-row-meta { color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; }
+.nutri-row-x {
+  background: none; border: none; color: var(--text-secondary); cursor: pointer;
+  font-size: 16px; line-height: 1; padding: 0 2px;
+}
+.nutri-row-x:hover { color: #FF6B6B; }
+.nutri-goal-row {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
+}
+.nutri-goal-row label { font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 5px; }
+.nutri-goal-row input {
+  width: 110px; padding: 7px 10px; border-radius: 8px; font-family: var(--font-mono); font-size: 13px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary);
+}
+.nutri-reset {
+  padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 11.5px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary);
+}
+.nutri-reset:hover { border-color: rgba(255,107,107,0.4); color: #FF6B6B; }
+.nutri-note { font-size: 11.5px; color: var(--text-secondary); line-height: 1.55; margin-top: 14px; }
+.nutri-note b { color: var(--text-primary); }
 .hm-cycles-row { display: flex; gap: 5px; margin: 14px 0 10px; }
 .hm-cycle {
   flex: 1; height: 10px; border-radius: 3px;
@@ -562,6 +604,31 @@ main {
   </div>
 
   <div class="attribution">// editable template · all data stays in your browser</div>
+
+  <!-- ── Nutrición líquida (calorías fáciles cuando no hay hambre ni tiempo) ── -->
+  <div class="section-title" style="margin-top:22px">Nutrición líquida</div>
+  <div class="hm-card" id="nutriCard">
+    <div class="hm-eyebrow">HOY · CALORÍAS LÍQUIDAS</div>
+    <div>
+      <span class="hm-big" id="nutriKcal">0</span>
+      <span class="hm-unit">kcal · <span id="nutriProt">0</span> g proteína</span>
+    </div>
+    <div class="hm-bar-track"><div class="hm-bar-fill nutri-fill" id="nutriBar" style="width:0%"></div></div>
+    <div class="hm-bar-labels"><span>0</span><span id="nutriGoalLabel">1200 kcal</span></div>
+    <div class="hm-msg" id="nutriMsg"></div>
+
+    <div class="nutri-quick" id="nutriQuick"></div>
+
+    <div class="nutri-log" id="nutriLog"></div>
+
+    <div class="nutri-goal-row">
+      <label>Objetivo líquido (kcal/día)
+        <input type="number" id="nutriGoalInput" inputmode="numeric" min="0" step="50" placeholder="1200">
+      </label>
+      <button type="button" class="nutri-reset" id="nutriReset">Vaciar hoy</button>
+    </div>
+    <div class="nutri-note">Estas kcal son un <b>suelo</b>, no la dieta entera: son las que entran aunque el día se tuerza. Con 12 h al volante y poco apetito, líquido gana a sólido — se bebe en 2 min y no depende de tener hambre.</div>
+  </div>
 
   <!-- ── Steps ── -->
   <div class="section-title" style="margin-top:22px">Pasos diarios</div>
@@ -1122,12 +1189,109 @@ main {
 })();
 </script>
 <script>
+// ============================================================
+// NUTRICIÓN LÍQUIDA — calorías que entran aunque no haya hambre
+// ni tiempo. Pensado para jornadas largas al volante: se registra
+// en un toque, se reinicia a las 6 AM igual que el stack.
+// Los kcal/proteína de los presets son ESTIMACIONES razonables —
+// ajusta según el bote que compres.
+// ============================================================
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  if (!$('nutriCard')) return;
+
+  const GOAL_KEY = 'nutri:goal';
+  const DAY_KEY  = 'nutri:day';
+  const DEFAULT_GOAL = 1200;
+
+  const PRESETS = [
+    { name: 'Mass Gainer',        kcal: 380, prot: 20, meta: '1 dosis' },
+    { name: 'Whey + leche',       kcal: 300, prot: 32, meta: '350 ml' },
+    { name: 'Whey + agua',        kcal: 120, prot: 24, meta: '1 scoop' },
+    { name: 'Batido avena+plát.', kcal: 450, prot: 30, meta: 'casero' },
+    { name: 'Frutos secos',       kcal: 180, prot: 5,  meta: 'puñado 30 g' }
+  ];
+
+  const get = (k, f) => { try { const r = localStorage.getItem(k); return r == null ? f : JSON.parse(r); } catch { return f; } };
+  const set = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+  // Mismo corte que el stack: el día "activo" cambia a las 6 AM.
+  function activeDate() {
+    const n = new Date();
+    if (n.getHours() < 6) n.setDate(n.getDate() - 1);
+    return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+  }
+  function today() {
+    const d = get(DAY_KEY, null);
+    if (!d || d.date !== activeDate()) return { date: activeDate(), items: [] };
+    return { date: d.date, items: Array.isArray(d.items) ? d.items : [] };
+  }
+  function saveDay(d) { set(DAY_KEY, d); render(); }
+  function goal() { const g = Number(get(GOAL_KEY, DEFAULT_GOAL)); return g > 0 ? g : DEFAULT_GOAL; }
+
+  function render() {
+    const d = today();
+    const g = goal();
+    const kcal = d.items.reduce((a, x) => a + (Number(x.kcal) || 0), 0);
+    const prot = d.items.reduce((a, x) => a + (Number(x.prot) || 0), 0);
+
+    $('nutriKcal').textContent = kcal;
+    $('nutriProt').textContent = prot;
+    $('nutriGoalLabel').textContent = g + ' kcal';
+    $('nutriBar').style.width = Math.min(100, (kcal / g) * 100).toFixed(1) + '%';
+
+    const msg = $('nutriMsg');
+    if (kcal === 0) msg.innerHTML = 'Nada aún. <strong>El primer batido es el que salva el día</strong> — no esperes a tener hambre.';
+    else if (kcal >= g) msg.innerHTML = '✅ Objetivo líquido cubierto (<strong>' + kcal + ' kcal · ' + prot + ' g</strong>). Lo que comas sólido ya suma encima.';
+    else msg.innerHTML = 'Faltan <strong>' + (g - kcal) + ' kcal</strong> para el suelo de hoy. Un batido más y estás.';
+
+    $('nutriQuick').innerHTML = PRESETS.map((p, i) =>
+      '<button type="button" class="nutri-btn" data-i="' + i + '">' +
+      '<span class="nutri-btn-name">+ ' + p.name + '</span>' +
+      '<span class="nutri-btn-meta">' + p.kcal + ' kcal · ' + p.prot + ' g · ' + p.meta + '</span></button>'
+    ).join('');
+
+    $('nutriLog').innerHTML = d.items.map((x, i) =>
+      '<div class="nutri-row"><span class="nutri-row-name">' + x.name + '</span>' +
+      '<span class="nutri-row-meta">' + x.kcal + ' kcal · ' + x.prot + ' g</span>' +
+      '<button class="nutri-row-x" data-del="' + i + '" aria-label="Quitar">×</button></div>'
+    ).join('');
+
+    const gi = $('nutriGoalInput');
+    if (gi && document.activeElement !== gi) gi.value = g;
+  }
+
+  $('nutriQuick').addEventListener('click', (e) => {
+    const b = e.target.closest('.nutri-btn'); if (!b) return;
+    const p = PRESETS[+b.dataset.i]; if (!p) return;
+    const d = today();
+    d.items.push({ name: p.name, kcal: p.kcal, prot: p.prot });
+    saveDay(d);
+  });
+  $('nutriLog').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    const d = today(); d.items.splice(+b.dataset.del, 1); saveDay(d);
+  });
+  $('nutriGoalInput').addEventListener('change', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (v > 0) { set(GOAL_KEY, v); render(); }
+  });
+  $('nutriReset').addEventListener('click', () => {
+    if (!confirm('¿Vaciar el registro líquido de hoy?')) return;
+    saveDay({ date: activeDate(), items: [] });
+  });
+  window.addEventListener('storage', render);
+  render();
+})();
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'health',
-    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
-    syncedPrefixes: ['stack:taken:'],
+    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1', 'nutri:goal', 'nutri:day'],
+    syncedPrefixes: ['stack:taken:', 'nutri:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });

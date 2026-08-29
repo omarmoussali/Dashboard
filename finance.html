@@ -1630,6 +1630,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 560px) { .ff-goal-add { grid-template-columns: 1fr 1fr; } .ff-goal-add .ff-btn { grid-column: span 2; } }
 
 .ff-goal { padding: 16px 18px; }
+.ff-goal-p1 { border-color: rgba(242,192,99,0.38); background: rgba(242,192,99,0.05); }
+.ff-p1-badge {
+  display: inline-block; margin-left: 7px; padding: 2px 7px; border-radius: 999px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: 0.08em;
+  color: #F2C063; background: rgba(242,192,99,0.15); vertical-align: middle;
+}
 .ff-goal-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .ff-goal-emoji { font-size: 18px; }
 .ff-goal-name { flex: 1; font-size: 15px; font-weight: 700; color: var(--text-primary); }
@@ -1985,12 +1991,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <div class="ff-block-k">Your numbers</div>
     <div class="ff-inputs">
       <label class="ff-field"><span>Cash / savings (€)</span><input id="ffCash" type="number" inputmode="decimal" placeholder="auto from Net Worth"></label>
-      <label class="ff-field"><span>Monthly income (€)</span><input id="ffIncome" type="number" inputmode="decimal" placeholder="0"></label>
-      <label class="ff-field"><span>Monthly expenses (€)</span><input id="ffExpenses" type="number" inputmode="decimal" placeholder="0"></label>
+      <label class="ff-field"><span>Ingreso NETO / mes (€)</span><input id="ffIncome" type="number" inputmode="decimal" placeholder="0"></label>
+      <label class="ff-field"><span>Gastos / mes (€)</span><input id="ffExpenses" type="number" inputmode="decimal" placeholder="0"></label>
       <label class="ff-field"><span>Emergency target (months)</span><input id="ffEmMonths" type="number" inputmode="numeric" placeholder="6"></label>
       <label class="ff-field"><span>Income goal (€/mo)</span><input id="ffIncomeGoal" type="number" inputmode="decimal" placeholder="0"></label>
     </div>
     <div class="ff-sub" id="ffCashHint" style="margin-top:10px"></div>
+    <div class="ff-sub" style="margin-top:8px">💼 <b>Uber por cuenta ajena:</b> el ingreso va como <b>salario neto directo</b> — la gasolina, el mantenimiento y las cuotas del coche NO salen de tu bolsillo, así que no se restan aquí. En «Gastos» van solo los tuyos (suscripciones, gym, transporte propio y, cuando te mudes, el alquiler).</div>
   </div>
 </div>
 
@@ -3683,10 +3690,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   // ---------- Goals ----------
+  // Ordenados por prioridad real, no por gusto: mudanza (tiene fecha) →
+  // colchón → imagen → resto. El primero de la lista es el que manda.
   var GOAL_CHIPS = [
-    { name:'Emergency fund', emoji:'🛡️' }, { name:'Style & image', emoji:'👔' },
-    { name:'New laptop / gear', emoji:'💻' }, { name:'Upskilling / course', emoji:'📚' },
-    { name:'Travel', emoji:'✈️' }, { name:'Buffer', emoji:'🪙' }
+    { name:'Fondo de mudanza', emoji:'🏠' }, { name:'Colchón de emergencia', emoji:'🛡️' },
+    { name:'Outfit & Marca Personal', emoji:'👔' }, { name:'Invisalign / dental', emoji:'🦷' },
+    { name:'Coche con etiqueta', emoji:'🚗' }, { name:'Boxeo / gym', emoji:'🥊' }
   ];
   function emojiFor(name){ var nm=(name||'').toLowerCase();
     if(/emergenc|buffer|safety/.test(nm))return'🛡️'; if(/style|cloth|image|wardrobe|outfit/.test(nm))return'👔';
@@ -3698,15 +3707,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (!$('ffGoalChips')) return;
     $('ffGoalChips').innerHTML = GOAL_CHIPS.map(function(c){ return '<button class="ff-chip" data-name="'+c.name+'">'+c.emoji+' '+c.name+'</button>'; }).join('');
     var arr = goals();
-    if (!arr.length) { $('ffGoalsList').innerHTML = '<div class="ff-card ff-empty">No goals yet — tap a suggestion above or add your own. Sinking funds turn "someday" into a date.</div>'; }
+    if (!arr.length) { $('ffGoalsList').innerHTML = '<div class="ff-card ff-empty">Sin objetivos aún — toca una sugerencia de arriba. Empieza por el <b>Fondo de mudanza</b>: tiene fecha real (2–4 meses), así que va primero, antes que cualquier capricho.</div>'; }
     else {
       $('ffGoalsList').innerHTML = arr.map(function(go, i){
         var saved = Number(go.saved)||0, target = Number(go.target)||0, monthly = Number(go.monthly)||0;
         var pct = target>0 ? clamp(saved/target,0,1)*100 : 0;
         var done = target>0 && saved>=target;
         var eta = (!done && monthly>0 && target>saved) ? Math.ceil((target-saved)/monthly) : null;
-        return '<div class="ff-card ff-goal">'+
-          '<div class="ff-goal-top"><span class="ff-goal-emoji">'+(go.emoji||emojiFor(go.name))+'</span><span class="ff-goal-name">'+esc(go.name)+'</span><span class="ff-goal-pct">'+Math.round(pct)+'%</span></div>'+
+        // El fondo de mudanza tiene fecha límite real → se marca como prioridad 1
+        // para que no quede sepultado entre los objetivos de gusto.
+        var isP1 = /mudanza|moving|piso|alquiler|rent/i.test(go.name||'');
+        return '<div class="ff-card ff-goal'+(isP1?' ff-goal-p1':'')+'">'+
+          '<div class="ff-goal-top"><span class="ff-goal-emoji">'+(go.emoji||emojiFor(go.name))+'</span><span class="ff-goal-name">'+esc(go.name)+(isP1?' <span class="ff-p1-badge">PRIORIDAD 1</span>':'')+'</span><span class="ff-goal-pct">'+Math.round(pct)+'%</span></div>'+
           '<div class="ff-bar"><div class="ff-bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+(done?'#6EE7B7':'#7DD3FC')+'"></div></div>'+
           '<div class="ff-goal-amts"><span class="ff-goal-saved">'+eur(saved)+'</span><span class="ff-goal-target">of '+eur(target)+'</span></div>'+
           '<div class="ff-goal-eta">'+(done?'Funded! 🎉':(eta!=null?('~'+eta+' month'+(eta===1?'':'s')+' at '+eur(monthly)+'/mo'):(monthly>0?'':'Set a €/mo contribution to get an ETA.')))+'</div>'+
@@ -3716,8 +3728,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
     var totalMonthly = arr.reduce(function(t,go){ return t+(Number(go.monthly)||0); }, 0);
     var n = nums();
-    var foot = arr.length ? ('You\'re committing <b>'+eur(totalMonthly)+'/mo</b> across '+arr.length+' goal'+(arr.length===1?'':'s')+'.') : 'Tip: make your Emergency fund the first goal, then a capped "Style & image" fund.';
-    if (arr.length && n.cashflow>0) foot += ' Your monthly surplus is '+eur(n.cashflow)+(totalMonthly>n.cashflow?' — that\'s less than you\'re committing, so stagger them.':' — you can fund these comfortably.');
+    var foot = arr.length ? ('Estás comprometiendo <b>'+eur(totalMonthly)+'/mes</b> en '+arr.length+' objetivo'+(arr.length===1?'':'s')+'.') : 'Orden que aguanta: mudanza (tiene fecha) → colchón → imagen. Lo que tiene fecha límite gana a lo que apetece.';
+    if (arr.length && n.cashflow>0) foot += ' Tu excedente mensual es '+eur(n.cashflow)+(totalMonthly>n.cashflow?' — es MENOS de lo que estás comprometiendo. Escalónalos: primero la mudanza, el resto espera.':' — puedes financiarlos sin ahogarte.');
+    if (arr.length && !(n.cashflow>0)) foot += ' Aún no hay excedente calculado — mete ingreso y gastos en la pestaña Freedom y esto se vuelve real.';
     $('ffGoalsFoot').innerHTML = foot;
   }
   function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

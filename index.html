@@ -169,49 +169,71 @@ const FALLBACK = {
     { t: 'Descansar de verdad', s: 'Un día sin alarma' }
   ]
 };
-/* ====== MENSAJE DEL DÍA ======
-   Uno por día, el mismo toda la jornada (cambia solo al cambiar la fecha).
-   Vive aquí dentro a propósito: funciona sin red y sin depender de nadie.
-   Sirven para lo mismo — cortar la rumiación y empujar a hacer lo de hoy.
-   Si el AIOS manda un `mensaje` en el feed, ese manda por encima. */
-const MENSAJES = [
-  'La cabeza da más vueltas cuando el cuerpo está quieto. Muévete primero; el ruido baja solo.',
-  'No tienes que entenderlo todo hoy. Solo tienes que hacer lo de hoy.',
-  'Pensarlo otra vez no te va a dar una respuesta nueva. Ya la tienes.',
-  'Si llevas veinte minutos dándole vueltas, ya no estás pensando. Levántate.',
-  'Hoy no busques tener ganas. Busca empezar. Las ganas vienen después, nunca antes.',
-  'Aparecer los días malos es lo que separa a quien cambia de quien solo lo intenta.',
-  'No tiene que ser tu mejor día. Tiene que ser un día hecho.',
-  'El listón de hoy es bajo: haz una sola cosa bien. Con eso vale.',
-  'Esto no se arregla en una semana. Se arregla en doce. Vas por la primera.',
-  'Dentro de un año esto será una historia que cuentas, no una que te pesa.',
-  'Nadie ve los meses aburridos. Todo el mundo ve el resultado.',
-  'Lo que construyas estos meses no te lo puede quitar nadie.',
-  'Tu valor no lo decide quien se fue. Lo decides tú, y se demuestra con lo que haces.',
-  'Que alguien no supiera cuidarte no dice nada de ti.',
-  'Lo que te aceptes a ti marca lo que vas a aceptar de los demás.',
-  'El dolor no se piensa, se atraviesa. Hoy toca atravesar un día más.',
-  'Estás cansado, no roto. No es lo mismo.',
-  'Los días malos también cuentan como días trabajados.',
-  'Doce horas al volante no son tiempo perdido: son el suelo que te deja levantar todo lo demás.',
-  'Cada día trabajado es un día menos dependiendo de nadie.',
-  'El dinero no te va a quitar la pena, pero sí el miedo. Y con menos miedo se piensa mejor.',
-  'El gimnasio es lo único de hoy que puedes controlar entero. Aprovéchalo.',
-  'Duerme. Es la mitad del tratamiento y es gratis.',
-  'Come aunque no tengas hambre. Tu cabeza también funciona con calorías.',
-  'Hoy no hace falta estar bien. Hace falta estar en marcha.',
-  'El pasado ya no admite cambios. El mes que viene sí.',
-  'Empezar otra vez con lo que ahora sabes no es retroceder.',
-  'Lo que sientes hoy no es lo que vas a sentir siempre.',
-  'No te compares con quien eras hace un mes. Compárate con quien serías si te rindes.',
-  'Tienes gente que te quiere bien. Escríbele a uno hoy.',
-  'Haz la cama, dúchate, sal a la calle. En ese orden. Suena tonto y funciona.',
-  'No estás atrasado en la vida. Estás en tu tramo difícil, que no es lo mismo.',
-  'Cuando no sepas qué hacer, haz lo siguiente pequeño. Solo eso.',
-  'Un año de esto y no te reconoce nadie, empezando por ti.',
-  'Tu trabajo de hoy no tiene que impresionar a nadie. Solo tiene que estar hecho.',
-  'Descansar no es rendirse. Es parte del plan.'
-];
+/* ====== MENSAJE DEL MOMENTO ======
+   No es un mensaje al día: es el mensaje que toca AHORA. Los disparadores
+   de Omar tienen horario —  el volante en silencio, la noche solo, el finde
+   sin plan— así que el mensaje cambia según el tramo. Estable dentro de cada
+   tramo (no baila si abres dos veces). Embebido a propósito: sin red y sin
+   depender de nadie. Un `mensaje` en el feed del AIOS manda por encima.
+   Registro: práctico y firme. Nada de positivismo tóxico ni de lástima.
+   Nunca se da por hecha relación con los padres. */
+const MENSAJES = {
+  manana: [
+    'Come algo antes del primer café. Café en ayunas es ansiedad disfrazada de energía.',
+    'No tienes que sentirte bien para hacerlo bien. Solo arranca.',
+    'Batido antes de salir. Si el estómago está cerrado, que entre líquido.',
+    'El día tiene una exigencia: terminarlo. Lo demás es extra.',
+    'Deja la comida lista ahora, no a las tres cuando ya no puedas ni decidir.',
+    'Plan de hoy: trabajar, comer, entrenar. No le añadas nada más.',
+    'Lo que hagas hoy no lo va a ver nadie. Por eso cuenta.',
+    'Ducha, ropa decente, a la calle. En ese orden. Suena tonto y funciona.',
+    'Hoy trabajas para no depender de nadie. Con ese motivo basta.'
+  ],
+  turno: [
+    'Si te has ido diez minutos a la cabeza, vuelve. Ventana abajo, música, siguiente viaje.',
+    'Repasarlo otra vez no te va a dar información nueva. Ya la tienes toda.',
+    'El volante no es sitio para juzgar tu vida. Conduce; ya pensarás descansado.',
+    'Su silencio no es un veredicto sobre ti. Es solo silencio.',
+    'No estás comparando tu vida con la suya. Comparas tu dolor con su fachada.',
+    'Cada carrera es dinero para tu piso. Literal. No es tiempo perdido.',
+    'Cansancio no es tristeza, aunque a las seis se parezcan. Come algo.',
+    'Segundo café solo si has comido. Si no, agua y sigue.',
+    'Estás cansado, no roto. No es lo mismo.',
+    'Las horas de hoy son la mudanza de dentro de tres meses. Van a algún sitio.'
+  ],
+  noche: [
+    'De noche y cansado: la peor combinación para sacar conclusiones. Hoy no decides nada.',
+    'Lo que sientes ahora se va a ver distinto con ocho horas de sueño.',
+    'No le escribas. Mañana te lo agradeces.',
+    'Buscar su rastro en el móvil no es buscar información. Es buscar dolor.',
+    'Pediste perdón por reaccionar a un daño que no empezaste tú. No lo repitas.',
+    'Doce horas trabajadas. Ya es suficiente para un día.',
+    'Duerme. Es la mitad del tratamiento y es lo único gratis que tienes.',
+    'Cierra el día. Mañana hay otro y también lo sacas.',
+    'Darlo todo rápido no asegura a nadie. Solo te vacía a ti.',
+    'Tu valor no depende de que alguien lo reconozca. Nunca dependió.'
+  ],
+  finde: [
+    'El finde sin plan es donde gana la cabeza. Decide una cosa ya: gym, fotos o calle.',
+    'Hoy no hay volante que te ocupe el día. Ponle tú la estructura antes de que se llene sola.',
+    'Descansar es parte del plan. Pero descansar no es quedarte quieto pensando.',
+    'Sal aunque sea media hora. La casa lo amplifica todo.',
+    'Escríbele a un amigo de los de verdad. Hoy toca eso.',
+    'Hoy mandas tú en el día: gym, foto, comida decente, ducha larga.',
+    'Contar los días desde la ruptura no mide nada. Mide los entrenos y el dinero.',
+    'Talla S, sonrisa arreglada, piso propio. Se llega por acumulación, no por un día heroico.',
+    'Lo que construyas estos meses no te lo quita nadie.',
+    'No tienes que arreglar lo que rompió otro.'
+  ]
+};
+const CTX_LABEL = { manana: 'Hoy', turno: 'En ruta', noche: 'Esta noche', finde: 'Finde' };
+function contextoAhora(d) {
+  const dow = d.getDay(), h = d.getHours();
+  if (dow === 0 || dow === 6) return 'finde';
+  if (h < 11) return 'manana';
+  if (h < 20) return 'turno';
+  return 'noche';
+}
 const SUPA_URL = 'https://dhukvmiffrqnkzvmvofb.supabase.co';
 const SUPA_KEY = 'sb_publishable_JTo9zCRGuSwgkMalLrJMHA_l-CDxTcE';
 const FEED_KEY = 'aios_today';
@@ -264,14 +286,17 @@ $('modebar').addEventListener('click', e => {
   applyMode();
 });
 
-/* Índice estable por día: el mismo mensaje toda la jornada. */
-const dayIdx = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 86400000);
+/* Estable dentro del tramo: no cambia al reabrir, sí al cambiar de tramo o de día. */
 let feedMsg = null, msgOffset = 0;
 function renderMsg() {
+  const d = new Date();
+  const ctx = contextoAhora(d);
+  const pool = MENSAJES[ctx];
+  document.querySelector('.msg-k').textContent = CTX_LABEL[ctx];
   if (feedMsg && msgOffset === 0) { $('msgText').textContent = feedMsg; return; }
-  const k = msgOffset - (feedMsg ? 1 : 0);
-  const i = ((dayIdx + k) % MENSAJES.length + MENSAJES.length) % MENSAJES.length;
-  $('msgText').textContent = MENSAJES[i];
+  const dIdx = Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 86400000);
+  const k = dIdx + msgOffset - (feedMsg ? 1 : 0);
+  $('msgText').textContent = pool[((k % pool.length) + pool.length) % pool.length];
 }
 $('msgMore').addEventListener('click', () => { msgOffset++; renderMsg(); });
 renderMsg();
@@ -320,7 +345,9 @@ async function pull() {
 }
 pull();
 /* Al volver a la pestaña (por la mañana, al abrir el móvil) → se refresca solo. */
-document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+/* Al volver a la pestaña: refresca datos Y el mensaje (puede haber cambiado
+   de tramo — p. ej. dejaste la app abierta por la tarde y la miras de noche). */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { msgOffset = 0; renderMsg(); pull(); } });
 </script>
 </body>
 </html>

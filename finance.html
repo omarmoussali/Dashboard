@@ -1002,6 +1002,19 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
   border: 1px dashed rgba(255,255,255,0.08);
 }
 .wish-empty-card.hidden { display: none; }
+/* Prioridad + puente deseo → hucha de ahorro */
+.wish-prio {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+}
+.wish-prio:hover { text-decoration: underline; }
+.wish-to-goal {
+  display: block; width: 100%; margin-top: 10px; padding: 9px;
+  border-radius: 9px; cursor: pointer; font-size: 12px; font-weight: 600;
+  background: rgba(110,231,183,0.07); border: 1px solid rgba(110,231,183,0.22); color: #6EE7B7;
+}
+.wish-to-goal:hover { background: rgba(110,231,183,0.12); }
+.wish-row-linked { margin-top: 10px; font-size: 11.5px; color: #6EE7B7; opacity: 0.85; }
 .wish-empty-icon {
   font-size: 36px; margin-bottom: 8px;
   opacity: 0.6;
@@ -1923,9 +1936,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   <div class="card wish-add-card">
     <div class="wish-add-eyebrow">+ ADD AN ITEM</div>
     <div class="wish-add-row">
-      <input type="text"   id="wishName"   placeholder="Item name (e.g. New iPhone Pro Max)" class="wish-input wish-input-name">
-      <input type="number" id="wishAmount" placeholder="Cost" step="0.01" class="wish-input wish-input-amt">
-      <select id="wishCurrency" class="wish-input wish-input-ccy">
+      <input type="text"   id="wishName"   placeholder="Qué quieres (ej. Invisalign)" class="wish-input wish-input-name">
+      <input type="number" id="wishAmount" placeholder="Coste" step="0.01" class="wish-input wish-input-amt">
+      <select id="wishPrio" class="wish-input wish-input-ccy" title="Prioridad">
+        <option value="1">🔴 Alta</option>
+        <option value="2" selected>🟡 Media</option>
+        <option value="3">⚪ Baja</option>
+      </select>
+      <select id="wishCurrency" class="wish-input wish-input-ccy" hidden>
         <option value="EUR">EUR</option>
       </select>
       <button class="wish-add-btn" id="wishAddBtn" onclick="window.__addWish && window.__addWish()">+ Add</button>
@@ -3026,30 +3044,46 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (!items.length) { if (wishEmpty) wishEmpty.classList.remove('hidden'); return; }
     if (wishEmpty) wishEmpty.classList.add('hidden');
 
-    // Sort largest first so the biggest dreams sit at the top
-    items.slice().sort((a, b) => (b.amount || 0) - (a.amount || 0)).forEach((it) => {
+    // Orden: PRIORIDAD primero (lo que de verdad quieres antes), y dentro de
+    // cada prioridad lo más caro arriba. Antes ordenaba solo por precio, que
+    // ponía los caprichos caros por delante de lo importante.
+    const PRIO = { 1: { t: 'ALTA', c: '#FF6B6B' }, 2: { t: 'MEDIA', c: '#F2C063' }, 3: { t: 'BAJA', c: 'rgba(255,255,255,0.35)' } };
+    const goalNames = (function () {
+      try { return (JSON.parse(localStorage.getItem('fin:goals')) || []).map(g => String(g.name || '').toLowerCase()); }
+      catch (e) { return []; }
+    })();
+    items.slice()
+      .sort((a, b) => ((a.prio || 2) - (b.prio || 2)) || ((b.amount || 0) - (a.amount || 0)))
+      .forEach((it) => {
       const idx = items.indexOf(it);
       const cost = Number(it.amount) || 0;
       const pct = grand > 0 ? (cost / grand) * 100 : null;
       const cls = pct == null ? 'flat' : pctClass(pct);
       const pctText = pct == null ? '—' : pct.toFixed(2) + '%';
       const fillPct = Math.min(100, pct == null ? 0 : pct);
-      const monthsToSave = (grand > 0 && cost > 0) ? Math.ceil(cost / Math.max(1, grand * 0.05)) : null; // rough: if you saved 5%/mo
+      const p = PRIO[it.prio || 2];
+      const yaEsObjetivo = goalNames.indexOf(String(it.name || '').toLowerCase()) !== -1;
       const row = document.createElement('div');
       row.className = 'wish-row';
       row.innerHTML =
           '<div class="wish-row-h">'
         + '<div class="wish-row-info">'
         +   '<div class="wish-row-name">' + escapeHtml(it.name) + '</div>'
-        +   '<div class="wish-row-meta">' + (it.entered_currency || 'CHF') + ' ' + Number(it.entered_amount != null ? it.entered_amount : it.amount).toLocaleString('en-US', {maximumFractionDigits: 2}) + ' · added ' + fmtActivityDate(it.ts || Date.now()) + '</div>'
+        +   '<div class="wish-row-meta">'
+        +     '<button class="wish-prio" data-prio="' + idx + '" style="color:' + p.c + '" title="Cambiar prioridad">● ' + p.t + '</button>'
+        +     ' · añadido ' + fmtActivityDate(it.ts || Date.now())
+        +   '</div>'
         + '</div>'
         + '<div class="wish-row-amt-wrap">'
         +   '<div class="wish-row-amt">' + fmtMoney(cost) + '</div>'
-        +   '<div class="wish-row-pct ' + cls + '">' + pctText + ' of NW</div>'
+        +   '<div class="wish-row-pct ' + cls + '">' + pctText + ' del patrimonio</div>'
         + '</div>'
-        + '<button class="wish-row-x" data-i="' + idx + '" aria-label="Remove">×</button>'
+        + '<button class="wish-row-x" data-i="' + idx + '" aria-label="Quitar">×</button>'
         + '</div>'
-        + '<div class="wish-row-bar"><div class="wish-row-bar-fill ' + cls + '" style="width:' + fillPct + '%"></div></div>';
+        + '<div class="wish-row-bar"><div class="wish-row-bar-fill ' + cls + '" style="width:' + fillPct + '%"></div></div>'
+        + (yaEsObjetivo
+            ? '<div class="wish-row-linked">✓ Ya tiene hucha en Objetivos — ahí ves cuánto llevas</div>'
+            : '<button class="wish-to-goal" data-goal="' + idx + '">+ Empezar a ahorrar para esto</button>');
       wishList.appendChild(row);
     });
     wishList.querySelectorAll('.wish-row-x').forEach(b => {
@@ -3059,6 +3093,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         arr.splice(i, 1);
         storeSet('wishlist', arr);
         renderWishlist();
+      });
+    });
+    // Toca la prioridad para rotarla: alta → media → baja → alta.
+    wishList.querySelectorAll('.wish-prio').forEach(b => {
+      b.addEventListener('click', () => {
+        const i = parseInt(b.dataset.prio, 10);
+        const arr = storeGet('wishlist') || [];
+        if (!arr[i]) return;
+        arr[i].prio = ((Number(arr[i].prio || 2)) % 3) + 1;
+        storeSet('wishlist', arr);
+        renderWishlist();
+      });
+    });
+    // Convierte un deseo en hucha: aparece en Objetivos con barra de progreso,
+    // cuánto llevas ahorrado y en cuántos meses llega según lo que apartes.
+    wishList.querySelectorAll('.wish-to-goal').forEach(b => {
+      b.addEventListener('click', () => {
+        const i = parseInt(b.dataset.goal, 10);
+        const arr = storeGet('wishlist') || [];
+        const it = arr[i];
+        if (!it) return;
+        const mensual = prompt('¿Cuánto puedes apartar al mes para "' + it.name + '"? (€)', '50');
+        if (mensual == null) return;
+        let goals = [];
+        try { goals = JSON.parse(localStorage.getItem('fin:goals')) || []; } catch (e) {}
+        goals.push({
+          id: 'g' + Date.now(), name: it.name, emoji: '🎯',
+          target: Number(it.amount) || 0, saved: 0,
+          monthly: Math.max(0, parseFloat(mensual) || 0)
+        });
+        localStorage.setItem('fin:goals', JSON.stringify(goals));
+        window.dispatchEvent(new Event('storage'));
+        renderWishlist();
+        alert('Listo. "' + it.name + '" ya está en Objetivos con su hucha.');
       });
     });
   }
@@ -3074,9 +3142,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       const enteredCcy = cEl ? cEl.value : 'CHF';
       const rate = exchangeRates[enteredCcy] || 1;
       const amountCHF = aRaw / rate;
+      const pEl = document.getElementById('wishPrio');
       const arr = storeGet('wishlist') || [];
       arr.push({
         name: n, amount: amountCHF, ts: Date.now(),
+        prio: pEl ? (parseInt(pEl.value, 10) || 2) : 2,
         entered_amount: aRaw, entered_currency: enteredCcy
       });
       storeSet('wishlist', arr);

@@ -76,6 +76,26 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .msg .msg-k{display:block;font-family:var(--font-mono);font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:14px;opacity:.8}
 .msg-more{position:absolute;right:14px;bottom:12px;background:none;border:0;color:var(--text-tertiary);font-size:15px;line-height:1;padding:6px;cursor:pointer;opacity:.35;transition:opacity .15s}
 .msg-more:hover{opacity:.9}
+/* Estructura del día: bloques, no lista de tareas. Compacto a propósito —
+   una línea por bloque, el de AHORA resaltado. Cuando llegas reventado no
+   hay que decidir nada: el bloque ya dice qué toca. */
+.tl{position:relative;padding-left:4px}
+.tl-row{display:flex;align-items:flex-start;gap:12px;padding:12px 13px;border-radius:13px;cursor:pointer;position:relative;transition:background .15s,border-color .15s;border:1px solid transparent}
+.tl-row+.tl-row{margin-top:4px}
+.tl-row:hover{background:rgba(255,255,255,.025)}
+.tl-row.now{background:rgba(107,227,164,.06);border-color:rgba(107,227,164,.26)}
+.tl-row input{appearance:none;width:19px;height:19px;flex:0 0 auto;margin-top:2px;border-radius:7px;border:1.5px solid rgba(255,255,255,.22);background:transparent;cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.tl-row input:checked{background:var(--emerald);border-color:var(--emerald)}
+.tl-row input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;color:#04130b;font-size:12px;font-weight:900}
+.tl-time{flex:0 0 42px;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-tertiary);padding-top:3px;font-variant-numeric:tabular-nums}
+.tl-row.now .tl-time{color:var(--emerald)}
+.tl-body{flex:1;min-width:0}
+.tl-name{display:block;font-size:14.5px;color:var(--text-primary);line-height:1.35}
+.tl-sub{display:block;font-size:11.5px;color:var(--text-tertiary);margin-top:2px;line-height:1.4}
+.tl-row input:checked~.tl-body .tl-name{opacity:.4;text-decoration:line-through}
+.tl-now-tag{font-family:var(--font-mono);font-size:8.5px;font-weight:800;letter-spacing:.12em;color:var(--emerald);background:rgba(107,227,164,.14);border-radius:999px;padding:2px 7px;margin-left:7px;vertical-align:middle}
+.streak{display:flex;align-items:center;gap:8px;margin-top:14px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.05);font-size:12.5px;color:var(--text-secondary)}
+.streak b{color:var(--emerald);font-variant-numeric:tabular-nums}
 /* Navegación compacta: iconos en una fila, sin párrafos que leer */
 .navrow{display:flex;gap:8px;margin-top:22px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .navrow::-webkit-scrollbar{display:none}
@@ -114,12 +134,14 @@ details.more[open]>summary::after{content:'–'}
   </div>
 
   <div id="viewWork">
-    <div class="t3" id="top3"></div>
+    <div class="tl" id="timeline"></div>
   </div>
 
   <div id="viewWeekend" hidden>
     <div class="t3" id="weekend"></div>
   </div>
+
+  <div class="streak" id="streak" hidden></div>
 
   <nav class="navrow">
     <a href="gym.html"><span class="ic">🏋️</span><span class="nm">Gym</span></a>
@@ -138,6 +160,7 @@ details.more[open]>summary::after{content:'–'}
       <span class="sub"><b id="run-cash"></b> en caja · quema <b id="run-burn"></b>/mes · actualizado <span id="run-upd"></span></span>
     </div>
     <div class="card q" id="quotas" style="margin-top:10px"></div>
+    <div class="t3" id="top3" style="margin-top:10px"></div>
     <p class="note" id="note"></p>
   </details>
 
@@ -286,6 +309,74 @@ $('modebar').addEventListener('click', e => {
   applyMode();
 });
 
+/* ====== ESTRUCTURA DEL DÍA ======
+   Bloques fijos con horario, no una lista de tareas sueltas. El bloque de
+   después del turno YA viene asignado según el día de la semana: cuando
+   llegas reventado, decidir es lo primero que falla — así no hay que decidir.
+   Entreno 07:30–09:00 según lo que Omar hace de verdad. */
+const CONSTRUIR = {
+  1: { n: 'Construir · Moda',      s: 'Probar outfits, lista de lo que falta' },
+  2: { n: 'Construir · Instagram', s: 'Grabar y publicar. Hecho > perfecto' },
+  3: { n: 'Construir · Arte',      s: 'Lo tuyo. Sin pantalla ajena' },
+  4: { n: 'Construir · Gente',     s: 'Escribe a alguien de verdad. Queda' },
+  5: { n: 'Construir · Salir',     s: 'Social real, fuera de casa' }
+};
+function bloquesDeHoy(d) {
+  const c = CONSTRUIR[d.getDay()] || CONSTRUIR[1];
+  return [
+    { h: '06:00', fin: 7.5,  n: 'Arranque',  s: 'Come algo ANTES del café' },
+    { h: '07:30', fin: 9,    n: 'Entreno',   s: 'Fuerza o boxeo · 90 min' },
+    { h: '09:00', fin: 21,   n: 'Turno',     s: 'Las horas. Comer a media jornada' },
+    { h: '21:00', fin: 23,   n: c.n,         s: c.s },
+    { h: '23:00', fin: 30,   n: 'Cierre',    s: 'Cena, móvil fuera, dormir' }
+  ];
+}
+const diaKey = 'dia:' + iso;
+function renderTimeline() {
+  const wrap = $('timeline');
+  if (!wrap) return;
+  const d = new Date();
+  const bl = bloquesDeHoy(d);
+  const ahora = d.getHours() + d.getMinutes() / 60;
+  // El bloque actual: el último cuyo inicio ya pasó (con vuelta de madrugada).
+  let nowIdx = -1;
+  bl.forEach((b, i) => { if (ahora >= parseFloat(b.h) + (+b.h.slice(3)) / 60) nowIdx = i; });
+  if (ahora < 6) nowIdx = bl.length - 1; // madrugada = cierre
+  const saved = JSON.parse(localStorage.getItem(diaKey) || '[]');
+  wrap.innerHTML = bl.map((b, i) => `
+    <label class="tl-row${i === nowIdx ? ' now' : ''}">
+      <input type="checkbox" data-i="${i}" ${saved[i] ? 'checked' : ''}>
+      <span class="tl-time">${b.h}</span>
+      <span class="tl-body"><span class="tl-name">${b.n}${i === nowIdx ? '<span class="tl-now-tag">AHORA</span>' : ''}</span>
+      <span class="tl-sub">${b.s}</span></span>
+    </label>`).join('');
+  renderStreak();
+}
+$('timeline').addEventListener('change', () => {
+  const st = [...document.querySelectorAll('#timeline input')].map(c => c.checked);
+  localStorage.setItem(diaKey, JSON.stringify(st));
+  renderStreak();
+});
+/* Racha: días seguidos (hacia atrás desde hoy) con 3+ bloques cerrados.
+   Hoy no rompe la racha si aún no has terminado — solo cuenta a partir de ayer. */
+function renderStreak() {
+  const el = $('streak');
+  if (!el) return;
+  let n = 0;
+  for (let back = 0; back < 400; back++) {
+    const dd = new Date(now); dd.setDate(dd.getDate() - back);
+    const k = 'dia:' + dd.getFullYear() + '-' + pad(dd.getMonth() + 1) + '-' + pad(dd.getDate());
+    let arr = [];
+    try { arr = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) {}
+    const hechos = arr.filter(Boolean).length;
+    if (hechos >= 3) n++;
+    else if (back > 0) break;        // un día flojo anterior corta la racha
+  }
+  if (!n) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '🔥 <span><b>' + n + '</b> ' + (n === 1 ? 'día' : 'días seguidos') + ' cerrando el día. Esto es lo que se acumula.</span>';
+}
+
 /* Estable dentro del tramo: no cambia al reabrir, sí al cambiar de tramo o de día. */
 let feedMsg = null, msgOffset = 0;
 function renderMsg() {
@@ -347,7 +438,10 @@ pull();
 /* Al volver a la pestaña (por la mañana, al abrir el móvil) → se refresca solo. */
 /* Al volver a la pestaña: refresca datos Y el mensaje (puede haber cambiado
    de tramo — p. ej. dejaste la app abierta por la tarde y la miras de noche). */
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { msgOffset = 0; renderMsg(); pull(); } });
+renderTimeline();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { msgOffset = 0; renderMsg(); renderTimeline(); pull(); }
+});
 </script>
 </body>
 </html>

@@ -58,28 +58,28 @@ const CONFIG = {
 
   defaultExercises: [
     // ── D1 · PIERNA A — cuádriceps (punto débil → prioridad) ───────────────
-    { name: "Hack Squat",                      gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 6,  repMax: 10, step: 5,    startWeight: 80  },
-    { name: "Sentadilla Libre",                gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 40  },
-    { name: "Prensa Inclinada",                gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 10, repMax: 15, step: 5,    startWeight: 100 },
-    { name: "Zancadas Mancuernas",             gym: "gym", day: "piernaA",    group: "unilat", sets: 3, repMin: 10, repMax: 12, step: 2.5,  startWeight: 12  },
-    { name: "Búlgara Mancuernas",              gym: "gym", day: "piernaA",    group: "unilat", sets: 3, repMin: 10, repMax: 12, step: 2.5,  startWeight: 10  },
-    { name: "Extensión de Cuádriceps",         gym: "gym", day: "piernaA",    sets: 4, repMin: 15, repMax: 20, step: 5,    startWeight: 30  },
+    // v6: un ejercicio por zona del músculo. Las variantes de grupo son
+    // alternativas (se hace UNA), no ejercicios extra.
+    { name: "Hack Squat",                      gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 6,  repMax: 10, step: 5,    startWeight: 80  },
+    { name: "Sentadilla Libre",                gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 40  },
+    { name: "Prensa Inclinada",                gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 10, repMax: 15, step: 5,    startWeight: 100 },
+    { name: "Extensión de Cuádriceps",        gym: "gym", day: "piernaA",    sets: 4, repMin: 15, repMax: 20, step: 5,    startWeight: 30  },
     { name: "Gemelo de Pie",                   gym: "gym", day: "piernaA",    sets: 4, repMin: 12, repMax: 20, step: 5,    startWeight: 40  },
 
-    // ── D2 · ESPALDA INFERIOR — dorsal · lumbar · bíceps · antebrazo ───────
-    { name: "Jalón Agarre Abierto",            gym: "gym", day: "espaldaInf", group: "vpull",  sets: 4, repMin: 6,  repMax: 12, step: 2.5,  startWeight: 50  },
-    { name: "Dominadas",                       gym: "gym", day: "espaldaInf", group: "vpull",  sets: 4, repMin: 6,  repMax: 12, bw: true },
-    { name: "Remo Polea Baja",                 gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 12, step: 2.5,  startWeight: 40  },
-    { name: "Hiperextensiones",                gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, bw: true },
+    // ── D2 · ESPALDA INFERIOR — dorsal · bíceps · ANTEBRAZO completo ───────
+    // Antebrazo = punto débil: aquí van sus 4 zonas (braquiorradial, extensores,
+    // flexores, agarre). Las 2ª dosis repiten el ejercicio del día 5 → frecuencia.
+    { name: "Jalón Agarre Abierto",            gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, step: 2.5,  startWeight: 50  },
+    { name: "Dominadas",                       gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, bw: true },
     { name: "Curl Bíceps Inclinado 45°",       gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 10  },
-    { name: "Curl Martillo Mancuerna",         gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 14  },
+    { name: "Curl Inverso 2ª Dosis",           gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
     { name: "Curl Muñeca Polea Supino",        gym: "gym", day: "espaldaInf", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Extensión Muñeca Polea 2ª Dosis", gym: "gym", day: "espaldaInf", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Colgado en Barra · segundos",     gym: "gym", day: "espaldaInf", sets: 3, repMin: 20, repMax: 45, bw: true },
 
-    // ── D3 · PUSH — pecho · hombro (3 porciones) · tríceps ────────────────
+    // ── D3 · PUSH — pecho medio · pecho superior · lateral · tríceps ──────
     { name: "Press Banca Barra",               gym: "gym", day: "push",       sets: 4, repMin: 6,  repMax: 8,  step: 2.5,  startWeight: 60  },
     { name: "Press Inclinado Mancuernas",      gym: "gym", day: "push",       sets: 4, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 22  },
-    { name: "Press Hombro Mancuernas",         gym: "gym", day: "push",       sets: 3, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 18  },
-    { name: "Aperturas Pecho Cable",           gym: "gym", day: "push",       sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 10  },
     { name: "Elevaciones Laterales Mancuernas",gym: "gym", day: "push",       group: "lateral", sets: 5, repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
     { name: "Elevaciones Laterales Cable",     gym: "gym", day: "push",       group: "lateral", sets: 5, repMin: 12, repMax: 20, step: 1.25, startWeight: 5   },
     { name: "Extensión Tríceps Sobre la Cabeza",gym:"gym", day: "push",       sets: 4, repMin: 10, repMax: 15, step: 2.5,  startWeight: 20  },
@@ -87,7 +87,6 @@ const CONFIG = {
     // ── D4 · PIERNA B — femoral · glúteo ──────────────────────────────────
     { name: "Peso Muerto Rumano",              gym: "gym", day: "piernaB",    sets: 4, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 60  },
     { name: "Curl Femoral Tumbado",            gym: "gym", day: "piernaB",    sets: 4, repMin: 12, repMax: 15, step: 2.5,  startWeight: 30  },
-    { name: "Hip Thrust Barra",                gym: "gym", day: "piernaB",    sets: 3, repMin: 10, repMax: 15, step: 5,    startWeight: 60  },
     { name: "Gemelo de Pie Multipower",        gym: "gym", day: "piernaB",    sets: 4, repMin: 12, repMax: 20, step: 5,    startWeight: 40  },
 
     // ── D5 · ESPALDA SUPERIOR — trapecio · post. · lateral 2ª · antebrazo ──
@@ -2218,7 +2217,71 @@ details.po-more[open] > summary::after { content: '–'; }
       s.filterDay = 'piernaA';
       s.currentEx = null;
     }
-    s.logs = (s.logs && typeof s.logs === 'object') ? s.logs : {};
+    // ============================================================
+    // PROGRAMA v5b (2026-10-12) — arregla la v5: aquella recolocó los
+    // ejercicios viejos en los días nuevos en vez de retirarlos, así que cada
+    // día enseñaba el programa nuevo MÁS todo lo redundante del viejo (3 curls
+    // de muñeca, 4 de bíceps, 3 de tríceps…). Aquí se ARCHIVAN (archived:true →
+    // fuera de la lista, histórico intacto), se funden los duplicados con el
+    // mismo nombre y se aplican las series/reps/grupo del programa a los que
+    // ya existían. Los ejercicios añadidos a mano por Omar no se tocan.
+    // v6 (2026-10-17): además retira los que repetían zona dentro del propio
+    // v5 (Omar: "solo los esenciales, cada parte del músculo una vez") y mete
+    // el bloque de antebrazo completo en Espalda Inf.
+    // ============================================================
+    if (!s.programV6) {
+      s.programV6 = true;
+      const RETIRED = [
+        'Pecho Superior Máquina', 'Fondos Máquina / Press Francés', 'Tríceps Polea Cuerda',
+        'Extensión Tríceps Polea', 'Gemelos Máquina', 'Pallof Press Polea',
+        'Carga Lateral Oblicuos', 'Crunch Abdominal Cable', 'Jalón Agarre Cerrado',
+        'Curl Bíceps Barra Z Abierto', 'Curl Concentrado Máquina', 'Curl Muñeca Antebrazo Polea',
+        'Pájaro Deltoide Posterior', 'Flexión Cuello Máquina',
+        // v6 — solapes dentro del v5
+        'Zancadas Mancuernas', 'Búlgara Mancuernas', 'Hip Thrust Barra',
+        'Press Hombro Mancuernas', 'Aperturas Pecho Cable', 'Remo Polea Baja',
+        'Hiperextensiones', 'Curl Martillo Mancuerna'
+      ];
+      const PROG = {};
+      (CONFIG.defaultExercises || []).forEach(function (ne) { PROG[ne.name] = ne; });
+      const logs = (s.logs && typeof s.logs === 'object') ? s.logs : (s.logs = {});
+      const kept = {};
+      s.exercises = s.exercises.filter(function (e) {
+        if (!e || e.day === 'boxeo') return true;
+        if (RETIRED.indexOf(e.name) >= 0) { e.archived = true; return true; }
+        const k = e.name;
+        const p = PROG[k];
+        if (!p) return true;
+        // Los nombres del programa son únicos: el día sale del programa. (En
+        // una instalación limpia la v5 mandaba a Push todo lo que no conocía.)
+        e.day = p.day;
+        if (kept[k]) {
+          // Mismo ejercicio dos veces (el viejo lo tenía en Push y en Pull):
+          // un solo ejercicio con el histórico de los dos, ordenado por fecha.
+          const merged = (logs[kept[k].id] || []).concat(logs[e.id] || []);
+          merged.sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+          if (merged.length) logs[kept[k].id] = merged;
+          delete logs[e.id];
+          return false;
+        }
+        kept[k] = e;
+        e.sets = p.sets; e.repMin = p.repMin; e.repMax = p.repMax;
+        e.group = p.group || null;
+        return true;
+      });
+      // Lo que el programa tiene y el estado no (p. ej. el bloque de antebrazo)
+      Object.keys(PROG).forEach(function (name, i) {
+        if (kept[name]) return;
+        const ne = PROG[name];
+        const add = Object.assign({ id: 'v6_' + Date.now() + '_' + i, bw: false, group: null }, ne);
+        add.equip = add.bw ? 'other' : inferEquip(add.name);
+        if (add.equip === 'dumbbell') add.step = 2;
+        else if (add.equip === 'cable') add.step = 5;
+        s.exercises.push(add);
+      });
+      s.currentEx = null;
+    }
+    s.logs =(s.logs && typeof s.logs === 'object') ? s.logs : {};
     s.filterGym = s.filterGym || s.gyms[0].id;
     s.filterDay = s.filterDay || s.days[0].id;
     // Split rotation lives in state so the user can edit it via the pill modal.
@@ -2305,7 +2368,7 @@ details.po-more[open] > summary::after { content: '–'; }
   function nextWeightUp(w, ex) { const s = incFor(ex); return +(Math.floor((w + 1e-9) / s) * s + s).toFixed(3); }
   function getFiltered() {
     return state.exercises.filter(e =>
-      (e.gym === state.filterGym || e.gym === 'both') && e.day === state.filterDay);
+      !e.archived && (e.gym === state.filterGym || e.gym === 'both') && e.day === state.filterDay);
   }
   function getCurrentEx() {
     const f = getFiltered();
@@ -2654,7 +2717,7 @@ details.po-more[open] > summary::after { content: '–'; }
     const ex = getCurrentEx();
     if (!ex || !ex.group) { wrap.classList.remove('show'); wrap.innerHTML = ''; return; }
     const sibs = state.exercises.filter(e =>
-      e.group === ex.group && e.day === ex.day &&
+      !e.archived && e.group === ex.group && e.day === ex.day &&
       (e.gym === ex.gym || e.gym === 'both' || ex.gym === 'both'));
     if (sibs.length < 2) { wrap.classList.remove('show'); wrap.innerHTML = ''; return; }
     wrap.classList.add('show');

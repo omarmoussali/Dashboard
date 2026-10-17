@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Cardio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+<script src="lock.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+/* CARDIO v1 (2026-10-18) — programa de body/training.md "Cardio v2" del AIOS:
+   Zona 2 + 4×4 noruego, bici o cinta (nunca correr en llano), por fases.
+   Indicaciones + temporizador guiado del 4×4 + log de sesiones. */
+:root {
+  --text-primary:#FAFAFA; --text-secondary:#B8B6B0; --text-tertiary:#76746E;
+  --emerald:#6BE3A4; --warning:#F2C063; --danger:#FF6B6B; --hot:#FF8A5B; --cool:#7DD3FC;
+  --card:rgba(255,255,255,.03); --line:rgba(255,255,255,.07);
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --serif:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;background:#050506;color:var(--text-secondary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+.wrap{max-width:560px;margin:0 auto;padding:4px max(16px,env(safe-area-inset-right)) max(60px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+h1{margin:6px 0 0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:38px;color:#EDEAE2;line-height:1.05}
+.sub{margin-top:6px;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
+.eyebrow{font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary);margin:26px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card + .card{margin-top:10px}
+.card h3{margin:0 0 4px;font-family:var(--serif);font-style:italic;font-weight:500;font-size:20px;color:var(--text-primary)}
+.card p{margin:6px 0;font-size:14px;line-height:1.5}
+.card ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.55}
+.tag{display:inline-block;font-family:var(--font-mono);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-right:6px}
+.tag.z2{background:rgba(125,211,252,.12);color:var(--cool);border:1px solid rgba(125,211,252,.3)}
+.tag.hi{background:rgba(255,138,91,.12);color:var(--hot);border:1px solid rgba(255,138,91,.3)}
+.tag.ok{background:rgba(107,227,164,.12);color:var(--emerald);border:1px solid rgba(107,227,164,.3)}
+.zones{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:10px}
+.zone{border-radius:12px;padding:10px 12px;border:1px solid var(--line)}
+.zone b{display:block;font-family:var(--font-mono);font-size:20px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.zone span{font-size:12px}
+.week{display:flex;gap:8px;margin-top:4px}
+.wk{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.wk b{display:block;font-family:var(--font-mono);font-size:22px;color:var(--text-primary)}
+.wk span{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary)}
+.wk.done{border-color:rgba(107,227,164,.4)}
+.seg{display:flex;gap:6px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{flex:1;padding:10px 6px;border:0;border-radius:9px;background:transparent;color:var(--text-tertiary);font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seg button.on{background:rgba(107,227,164,.14);color:var(--emerald)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px}
+label.f{min-width:0;display:flex;flex-direction:column;gap:5px;font-family:var(--font-mono);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary)}
+input,select,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text-primary);font-size:16px;font-family:var(--font)}
+textarea{min-height:60px;resize:vertical}
+.chk{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:14px}
+.chk input{width:20px;height:20px}
+.btn{display:block;width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:var(--emerald);color:#04110a;font-family:var(--font-mono);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text-secondary)}
+.btn.hot{background:var(--hot)}
+.row2{display:flex;gap:10px}
+.row2 .btn{flex:1}
+.hist{margin-top:4px}
+.h{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.h .d{flex:0 0 54px;font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);padding-top:2px}
+.h .b{flex:1;font-size:14px;line-height:1.45}
+.h .b small{display:block;color:var(--text-tertiary);font-size:12px}
+.h .x{background:none;border:0;color:var(--text-tertiary);font-size:20px;cursor:pointer;padding:0 4px}
+.empty{font-size:14px;color:var(--text-tertiary);padding:8px 0}
+.delta-good{color:var(--emerald)} .delta-bad{color:var(--danger)}
+details.card summary{cursor:pointer;list-style:none;font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--text-tertiary)}
+details.card summary::-webkit-details-marker{display:none}
+/* ===== Temporizador a pantalla completa ===== */
+.tm{position:fixed;inset:0;z-index:60;background:#050506;display:none;flex-direction:column;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));transition:background .4s}
+.tm.show{display:flex}
+.tm.work{background:#1a0904} .tm.rec{background:#04121a}
+.tm .ph{font-family:var(--font-mono);font-size:13px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--text-tertiary);text-align:center;margin-top:10px}
+.tm .nm{font-family:var(--serif);font-style:italic;font-size:44px;color:var(--text-primary);text-align:center;margin-top:8px;line-height:1.05}
+.tm .clock{font-family:var(--font-mono);font-size:min(28vw,150px);font-weight:700;color:var(--text-primary);text-align:center;font-variant-numeric:tabular-nums;margin:auto 0 0;line-height:1}
+.tm .do{font-size:19px;line-height:1.45;color:#EDEAE2;text-align:center;margin:18px auto 0;max-width:420px}
+.tm .next{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);text-align:center;margin:18px 0 auto}
+.tm .bar{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:18px}
+.tm .bar i{display:block;height:100%;background:var(--emerald);width:0}
+.tm.work .bar i{background:var(--hot)} .tm.rec .bar i{background:var(--cool)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cardio</h1>
+  <div class="sub" id="phaseLine">—</div>
+
+  <div class="eyebrow">Esta semana</div>
+  <div class="week" id="week"></div>
+  <p class="empty" id="weekNote" style="margin-top:8px"></p>
+
+  <div class="eyebrow">Qué hacer</div>
+  <div class="card">
+    <span class="tag z2">Zona 2</span>
+    <h3>Suave y largo · 20–30 min</h3>
+    <p>Puedes hablar con frases enteras, aunque respiras más fuerte. Si solo te salen palabras sueltas, vas demasiado fuerte: baja.</p>
+    <ul>
+      <li><b>Cinta:</b> andando en pendiente (6–10 %), nunca corriendo en llano.</li>
+      <li><b>Bici:</b> resistencia media, 80–90 pedaladas/min.</li>
+      <li>Después de las espaldas o en día de descanso. Puede ir después del turno.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="tag hi">4×4 noruego</span><span class="tag ok" id="hiUnlock">desde la semana 4</span>
+    <h3>4 bloques fuertes · ~40 min</h3>
+    <p>10 min de calentamiento → <b>4 min fuerte + 3 min suave</b>, cuatro veces → 5 min para soltar.</p>
+    <ul>
+      <li><b>Fuerte</b> = solo te salen 1–2 palabras. Esfuerzo 8–9 sobre 10. Duro pero aguantable los 4 minutos: no es un sprint.</li>
+      <li>El pulso tarda 1–2 min en subir. No arranques a tope: tiene que estar arriba hacia el minuto 2 del bloque.</li>
+      <li><b>Cinta:</b> el mando es la <b>pendiente</b>. Andar rápido o trotar con mucha pendiente, sin correr en llano. Así cargas poco la pierna, sin la frenada de correr.</li>
+      <li>Después de Push o en día de descanso. <b>Nunca después de un día de pierna.</b></li>
+      <li>Termínalo <b>4 h antes de dormir</b>. Después del turno de noche, solo zona 2.</li>
+      <li>Nada de cigarro en las 1–2 h antes: el monóxido te quita oxígeno.</li>
+    </ul>
+    <button class="btn hot" id="start4x4">Empezar 4×4 guiado</button>
+    <button class="btn ghost" id="startZ2">Temporizador zona 2</button>
+  </div>
+  <div class="card">
+    <h3>Tu pulso</h3>
+    <p style="font-size:13px">Máx. estimado <b id="hrmaxTxt">193</b> ppm (fórmula para tus 22 años). Los agarres de la cinta miden mal, así que fíate más de si puedes hablar.</p>
+    <div class="zones">
+      <div class="zone"><span class="tag z2">Zona 2</span><b id="z2Range">115–135</b><span>frases enteras</span></div>
+      <div class="zone"><span class="tag hi">Bloque 4×4</span><b id="hiRange">165–183</b><span>1–2 palabras</span></div>
+    </div>
+  </div>
+
+  <div class="eyebrow">Apuntar sesión</div>
+  <div class="card" id="logCard">
+    <div class="seg" id="typeSeg">
+      <button data-v="z2" class="on">Zona 2</button>
+      <button data-v="4x4">4×4</button>
+      <button data-v="otro">Otro</button>
+    </div>
+    <div class="seg" id="machSeg" style="margin-top:8px">
+      <button data-v="cinta" class="on">Cinta</button>
+      <button data-v="bici">Bici</button>
+    </div>
+    <div class="grid2">
+      <label class="f">Minutos<input id="fMin" type="number" inputmode="decimal" min="1" step="1"></label>
+      <label class="f">Pulso medio<input id="fHr" type="number" inputmode="numeric" placeholder="opcional"></label>
+      <label class="f machine-cinta"><span id="lblSpeed">Velocidad km/h</span><input id="fSpeed" type="number" inputmode="decimal" step="0.1"></label>
+      <label class="f machine-cinta"><span id="lblInc">Pendiente %</span><input id="fInc" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f machine-bici" hidden><span id="lblLvl">Nivel / resistencia</span><input id="fLvl" type="number" inputmode="decimal" step="1"></label>
+      <label class="f machine-bici" hidden>Vatios<input id="fW" type="number" inputmode="numeric" placeholder="opcional"></label>
+      <label class="f">Distancia km<input id="fKm" type="number" inputmode="decimal" step="0.01" placeholder="opcional"></label>
+      <label class="f">Esfuerzo 1–10<input id="fRpe" type="number" inputmode="numeric" min="1" max="10"></label>
+    </div>
+    <label class="chk" id="testRow"><input type="checkbox" id="fTest"> Es el test mensual (misma máquina, mismo ajuste, 20 min)</label>
+    <label class="f" style="margin-top:12px">Nota<textarea id="fNote" placeholder="cómo te has sentido, si hablabas en el 4º bloque…"></textarea></label>
+    <button class="btn" id="saveBtn">Guardar sesión</button>
+  </div>
+
+  <div class="eyebrow">Test mensual · ¿está funcionando?</div>
+  <div class="card">
+    <p style="font-size:13px;margin-top:0">Cada 4 semanas: 20 min de zona 2 en la <b>misma máquina con el mismo ajuste</b>. Si el pulso medio baja, tu corazón está mejorando. Es la prueba objetiva.</p>
+    <div id="tests"></div>
+  </div>
+
+  <div class="eyebrow">Historial</div>
+  <div class="hist" id="hist"></div>
+
+  <details class="card" style="margin-top:26px">
+    <summary>Ajustes</summary>
+    <div class="grid2">
+      <label class="f">Pulso máx.<input id="cHr" type="number" inputmode="numeric"></label>
+      <label class="f">Inicio del plan<input id="cStart" type="date"></label>
+    </div>
+    <p style="font-size:12px">Las velocidades, pendientes y niveles que ves en el temporizador salen de tu último 4×4 apuntado. Si cambias de máquina, apunta una sesión y se actualizan solos.</p>
+    <button class="btn ghost" id="saveCfg">Guardar ajustes</button>
+  </details>
+</div>
+
+<!-- Temporizador -->
+<div class="tm" id="tm" aria-hidden="true">
+  <div class="ph" id="tmPh">—</div>
+  <div class="nm" id="tmNm">—</div>
+  <div class="clock" id="tmClock">0:00</div>
+  <div class="bar"><i id="tmBar"></i></div>
+  <div class="do" id="tmDo"></div>
+  <div class="next" id="tmNext"></div>
+  <div class="row2">
+    <button class="btn ghost" id="tmPause">Pausa</button>
+    <button class="btn ghost" id="tmSkip">Saltar</button>
+    <button class="btn ghost" id="tmStop">Terminar</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const LOGS_KEY = 'cardio:logs', CFG_KEY = 'cardio:cfg';
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function read(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  let logs = [], cfg = {};
+  const DEF_CFG = {
+    hrmax: 193, start: '',
+    cinta: { wSpeed: 6.5, wInc: 10, rSpeed: 4.5, rInc: 3 },
+    bici:  { wLvl: 12, rLvl: 5 }
+  };
+  function load() {
+    logs = read(LOGS_KEY, []);
+    if (!Array.isArray(logs)) logs = [];
+    cfg = Object.assign({}, DEF_CFG, read(CFG_KEY, {}));
+    cfg.cinta = Object.assign({}, DEF_CFG.cinta, cfg.cinta || {});
+    cfg.bici = Object.assign({}, DEF_CFG.bici, cfg.bici || {});
+  }
+
+  // ---------- Fase y semana ----------
+  function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function mondayOf(d) { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
+  function planStart() {
+    if (cfg.start) return new Date(cfg.start + 'T00:00:00');
+    if (logs.length) return new Date(logs.reduce((a, l) => l.date < a ? l.date : a, logs[0].date));
+    return new Date();
+  }
+  function weekNumber() { return Math.floor((mondayOf(new Date()) - mondayOf(planStart())) / (7 * 86400000)) + 1; }
+  function renderWeek() {
+    const wn = Math.max(1, weekNumber());
+    const phase2 = wn >= 4;
+    $('phaseLine').textContent = 'Semana ' + wn + ' · Fase ' + (phase2 ? '2 — base + intervalos' : '1 — crear base');
+    $('hiUnlock').textContent = phase2 ? 'toca esta semana' : 'desde la semana 4 (' + (4 - wn) + ' más)';
+    const mon = dayKey(mondayOf(new Date()));
+    const thisWk = logs.filter(l => l.date.slice(0, 10) >= mon);
+    const z2 = thisWk.filter(l => l.type === 'z2').length;
+    const hi = thisWk.filter(l => l.type === '4x4').length;
+    const mins = thisWk.reduce((a, l) => a + (+l.min || 0), 0);
+    const cells = phase2
+      ? [{ k: '4×4', c: hi, t: 1 }, { k: 'Zona 2', c: z2, t: 1 }, { k: 'Minutos', c: mins, t: null }]
+      : [{ k: 'Zona 2', c: z2, t: 2 }, { k: 'Minutos', c: mins, t: null }];
+    $('week').innerHTML = cells.map(x => '<div class="wk' + (x.t && x.c >= x.t ? ' done' : '') + '"><b>' + x.c + (x.t ? '/' + x.t : '') + '</b><span>' + x.k + '</span></div>').join('');
+    $('weekNote').textContent = phase2
+      ? 'Objetivo: 1 sesión de 4×4 y 1–2 de zona 2, más tus 8.000 pasos al día.'
+      : 'Objetivo: 2 sesiones de zona 2 de 20–30 min y 8.000 pasos al día. Nada más: primero el hábito.';
+  }
+  function renderZones() {
+    const m = +cfg.hrmax || 193;
+    $('hrmaxTxt').textContent = m;
+    $('z2Range').textContent = Math.round(m * .6) + '–' + Math.round(m * .7);
+    $('hiRange').textContent = Math.round(m * .85) + '–' + Math.round(m * .95);
+  }
+
+  // ---------- Formulario ----------
+  let fType = 'z2', fMach = 'cinta';
+  function segBind(id, set) {
+    $(id).addEventListener('click', e => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      [...$(id).querySelectorAll('button')].forEach(x => x.classList.toggle('on', x === b));
+      set(b.dataset.v); refreshForm();
+    });
+  }
+  function setSeg(id, v) { [...$(id).querySelectorAll('button')].forEach(x => x.classList.toggle('on', x.dataset.v === v)); }
+  segBind('typeSeg', v => fType = v);
+  segBind('machSeg', v => fMach = v);
+  function refreshForm() {
+    document.querySelectorAll('.machine-cinta').forEach(el => el.hidden = fMach !== 'cinta');
+    document.querySelectorAll('.machine-bici').forEach(el => el.hidden = fMach !== 'bici');
+    const hi = fType === '4x4';
+    $('lblSpeed').textContent = hi ? 'Velocidad bloques fuertes' : 'Velocidad km/h';
+    $('lblInc').textContent = hi ? 'Pendiente bloques fuertes %' : 'Pendiente %';
+    $('lblLvl').textContent = hi ? 'Nivel bloques fuertes' : 'Nivel / resistencia';
+    $('testRow').hidden = fType !== 'z2';
+    if (!$('fMin').value) $('fMin').placeholder = hi ? '40' : '25';
+  }
+  const num = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) ? v : null; };
+  $('saveBtn').addEventListener('click', () => {
+    const min = num('fMin');
+    if (!min) { $('fMin').focus(); return; }
+    const l = {
+      id: 'c_' + Date.now(), date: new Date().toISOString(), type: fType, machine: fMach, min: min,
+      hr: num('fHr'), km: num('fKm'), rpe: num('fRpe'), note: $('fNote').value.trim(),
+      test: fType === 'z2' && $('fTest').checked
+    };
+    if (fMach === 'cinta') { l.speed = num('fSpeed'); l.inc = num('fInc'); }
+    else { l.level = num('fLvl'); l.watts = num('fW'); }
+    logs.push(l);
+    write(LOGS_KEY, logs);
+    // El último 4×4 define los números que enseña el temporizador
+    if (fType === '4x4') {
+      if (fMach === 'cinta') { if (l.speed) cfg.cinta.wSpeed = l.speed; if (l.inc != null) cfg.cinta.wInc = l.inc; }
+      else if (l.level) cfg.bici.wLvl = l.level;
+      write(CFG_KEY, cfg);
+    }
+    ['fMin', 'fHr', 'fSpeed', 'fInc', 'fLvl', 'fW', 'fKm', 'fRpe', 'fNote'].forEach(id => $(id).value = '');
+    $('fTest').checked = false;
+    renderAll();
+    $('hist').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ---------- Historial y tests ----------
+  const TYPE_LBL = { z2: 'Zona 2', '4x4': '4×4', otro: 'Otro' };
+  function describe(l) {
+    const p = [];
+    if (l.machine === 'cinta') { if (l.speed) p.push(l.speed + ' km/h'); if (l.inc != null) p.push(l.inc + ' %'); }
+    else { if (l.level) p.push('nivel ' + l.level); if (l.watts) p.push(l.watts + ' W'); }
+    if (l.hr) p.push(l.hr + ' ppm'); if (l.km) p.push(l.km + ' km'); if (l.rpe) p.push('esfuerzo ' + l.rpe);
+    return p.join(' · ');
+  }
+  function renderHist() {
+    if (!logs.length) { $('hist').innerHTML = '<p class="empty">Todavía nada. La primera zona 2 de 20 min es la que cuenta.</p>'; return; }
+    const arr = logs.slice().sort((a, b) => b.date < a.date ? -1 : 1);
+    $('hist').innerHTML = arr.map(l => {
+      const d = new Date(l.date);
+      return '<div class="h"><div class="d">' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '</div><div class="b">'
+        + '<span class="tag ' + (l.type === '4x4' ? 'hi' : 'z2') + '">' + TYPE_LBL[l.type] + '</span>'
+        + (l.test ? '<span class="tag ok">test</span>' : '')
+        + esc(l.min) + ' min · ' + (l.machine === 'bici' ? 'bici' : 'cinta')
+        + '<small>' + esc(describe(l)) + '</small>' + (l.note ? '<small>' + esc(l.note) + '</small>' : '')
+        + '</div><button class="x" data-id="' + esc(l.id) + '" aria-label="Borrar">×</button></div>';
+    }).join('');
+    $('hist').querySelectorAll('.x').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('¿Borrar esta sesión?')) return;
+      logs = logs.filter(l => l.id !== b.dataset.id);
+      write(LOGS_KEY, logs); renderAll();
+    }));
+  }
+  function renderTests() {
+    const t = logs.filter(l => l.test && l.hr).sort((a, b) => a.date < b.date ? -1 : 1);
+    if (!t.length) { $('tests').innerHTML = '<p class="empty">Sin tests todavía. Tu primera zona 2 de 20 min con pulso apuntado puede ser el punto de partida: márcala como test.</p>'; return; }
+    $('tests').innerHTML = t.map((l, i) => {
+      const d = new Date(l.date);
+      let delta = '';
+      if (i > 0) { const diff = l.hr - t[i - 1].hr; delta = ' <span class="' + (diff <= 0 ? 'delta-good' : 'delta-bad') + '">' + (diff > 0 ? '+' : '') + diff + ' ppm</span>'; }
+      return '<div class="h"><div class="d">' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '</div><div class="b"><b>' + l.hr + ' ppm</b>' + delta + '<small>' + esc(describe(l)) + '</small></div></div>';
+    }).join('');
+  }
+
+  // ---------- Ajustes ----------
+  $('saveCfg').addEventListener('click', () => {
+    const hr = num('cHr'); if (hr && hr > 120 && hr < 230) cfg.hrmax = hr;
+    cfg.start = $('cStart').value || '';
+    write(CFG_KEY, cfg); renderAll();
+  });
+  function renderCfg() { $('cHr').value = cfg.hrmax; $('cStart').value = cfg.start || ''; }
+
+  // ---------- Temporizador ----------
+  // Por marcas de tiempo, no por ticks: si el móvil se bloquea o la pestaña se
+  // duerme, al volver sigue en el punto correcto.
+  let plan = [], idx = 0, phaseEnd = 0, pausedLeft = null, raf = null, wakeLock = null, audio = null, lastBeep = -1, tmMach = 'cinta';
+  function hiText(work) {
+    if (tmMach === 'bici') return work
+      ? 'SUBE la resistencia a nivel ' + cfg.bici.wLvl + ' · 80–90 rpm. Solo 1–2 palabras.'
+      : 'BAJA a nivel ' + cfg.bici.rLvl + ' · pedalea suave, no pares.';
+    return work
+      ? 'SUBE la pendiente a ' + cfg.cinta.wInc + ' % · ' + cfg.cinta.wSpeed + ' km/h. Solo 1–2 palabras. No es un sprint.'
+      : 'BAJA a ' + cfg.cinta.rInc + ' % · ' + cfg.cinta.rSpeed + ' km/h. Sigue andando, no te bajes.';
+  }
+  function build4x4() {
+    const p = [{ k: 'warm', n: 'Calentamiento', s: 600, d: 'Empieza suave y ve subiendo poco a poco. En los últimos 2 min, cerca del ritmo de los bloques.' }];
+    for (let i = 1; i <= 4; i++) {
+      p.push({ k: 'work', n: 'Bloque ' + i + ' de 4', s: 240, d: hiText(true) });
+      if (i < 4) p.push({ k: 'rec', n: 'Recupera ' + i + ' de 3', s: 180, d: hiText(false) });
+    }
+    p.push({ k: 'cool', n: 'Soltar', s: 300, d: 'Muy suave. Respira. Lo has hecho.' });
+    return p;
+  }
+  function buildZ2() {
+    const m = parseInt(prompt('¿Cuántos minutos de zona 2?', '25'), 10);
+    if (!m || m < 1) return null;
+    return [{ k: 'z2', n: 'Zona 2', s: m * 60, d: 'Ritmo de poder hablar con frases enteras. Si solo te salen palabras sueltas, baja.' }];
+  }
+  function beep(freq, ms) {
+    try {
+      if (!audio) return;
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = freq; o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.25, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + ms / 1000);
+      o.start(); o.stop(audio.currentTime + ms / 1000);
+    } catch (e) {}
+  }
+  function buzz(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+  async function keepAwake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('tm').classList.contains('show')) keepAwake(); });
+  const fmt = s => Math.floor(s / 60) + ':' + pad(Math.floor(s % 60));
+  function enterPhase(i) {
+    idx = i; lastBeep = -1;
+    const ph = plan[i];
+    phaseEnd = Date.now() + ph.s * 1000;
+    $('tm').className = 'tm show' + (ph.k === 'work' ? ' work' : ph.k === 'rec' ? ' rec' : '');
+    $('tmPh').textContent = 'Fase ' + (i + 1) + ' de ' + plan.length;
+    $('tmNm').textContent = ph.n;
+    $('tmDo').textContent = ph.d;
+    const nx = plan[i + 1];
+    $('tmNext').textContent = nx ? 'Después: ' + nx.n + ' · ' + fmt(nx.s) : 'Última fase';
+    if (i > 0) { beep(ph.k === 'work' ? 880 : 520, 600); buzz(ph.k === 'work' ? [300, 120, 300, 120, 300] : [500]); }
+  }
+  function tick() {
+    const ph = plan[idx];
+    const left = pausedLeft != null ? pausedLeft : Math.max(0, (phaseEnd - Date.now()) / 1000);
+    $('tmClock').textContent = fmt(Math.ceil(left));
+    $('tmBar').style.width = (100 * (1 - left / ph.s)) + '%';
+    const sec = Math.ceil(left);
+    if (pausedLeft == null && sec <= 3 && sec >= 1 && sec !== lastBeep) { lastBeep = sec; beep(660, 120); }
+    if (pausedLeft == null && left <= 0) {
+      if (idx + 1 < plan.length) enterPhase(idx + 1);
+      else return finish(true);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  function startTimer(p, type) {
+    if (!p) return;
+    plan = p; pausedLeft = null;
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume && audio.resume(); } catch (e) {}
+    keepAwake();
+    $('tm').setAttribute('aria-hidden', 'false');
+    $('tmPause').textContent = 'Pausa';
+    startTimer.type = type;
+    startTimer.t0 = Date.now();
+    enterPhase(0);
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(tick);
+  }
+  function finish(done) {
+    cancelAnimationFrame(raf);
+    try { wakeLock && wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+    $('tm').className = 'tm'; $('tm').setAttribute('aria-hidden', 'true');
+    if (done) { beep(990, 900); buzz([200, 100, 200, 100, 600]); }
+    const mins = Math.round((Date.now() - startTimer.t0) / 60000);
+    if (mins >= 1 && confirm(done ? 'Hecho. ¿Lo apuntamos?' : 'Has parado a los ' + mins + ' min. ¿Lo apuntamos igualmente?')) {
+      fType = startTimer.type; setSeg('typeSeg', fType);
+      fMach = tmMach; setSeg('machSeg', fMach);
+      refreshForm();
+      $('fMin').value = mins;
+      if (fType === '4x4') {
+        if (fMach === 'cinta') { $('fSpeed').value = cfg.cinta.wSpeed; $('fInc').value = cfg.cinta.wInc; }
+        else $('fLvl').value = cfg.bici.wLvl;
+      }
+      $('logCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+  $('tmPause').addEventListener('click', () => {
+    if (pausedLeft == null) { pausedLeft = Math.max(0, (phaseEnd - Date.now()) / 1000); $('tmPause').textContent = 'Seguir'; }
+    else { phaseEnd = Date.now() + pausedLeft * 1000; pausedLeft = null; $('tmPause').textContent = 'Pausa'; }
+  });
+  $('tmSkip').addEventListener('click', () => {
+    pausedLeft = null; $('tmPause').textContent = 'Pausa';
+    if (idx + 1 < plan.length) enterPhase(idx + 1); else finish(true);
+  });
+  $('tmStop').addEventListener('click', () => { if (confirm('¿Terminar la sesión?')) finish(false); });
+  function askMachine() {
+    const r = prompt('¿Cinta o bici? (escribe c o b)', fMach === 'bici' ? 'b' : 'c');
+    if (r == null) return null;
+    return /^b/i.test(r.trim()) ? 'bici' : 'cinta';
+  }
+  $('start4x4').addEventListener('click', () => {
+    const m = askMachine(); if (!m) return;
+    tmMach = m; startTimer(build4x4(), '4x4');
+  });
+  $('startZ2').addEventListener('click', () => {
+    const m = askMachine(); if (!m) return;
+    tmMach = m; startTimer(buildZ2(), 'z2');
+  });
+
+  function renderAll() { renderWeek(); renderZones(); renderHist(); renderTests(); renderCfg(); }
+  load(); refreshForm(); renderAll();
+
+  window.addEventListener('load', function () {
+    if (typeof initCloudSync !== 'function') return;
+    initCloudSync({ appKey: 'cardio', syncedKeys: [LOGS_KEY, CFG_KEY], onApplied: function () { load(); renderAll(); } });
+  });
+})();
+</script>
+</body>
+</html>

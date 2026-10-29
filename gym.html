@@ -25,21 +25,22 @@ const CONFIG = {
     { id: "gym", name: "Gym" }
   ],
 
-  // PROGRAMA v5 (2026-10-11) — espalda ×2 (inferior/superior) y pierna ×2
-  // (cuádriceps/femoral), con prioridad en los dos puntos débiles de Omar:
-  // piernas y antebrazos. Selección basada en evidencia, ver body/training.md
-  // del AIOS para el razonamiento y las fuentes.
+  // PROGRAMA v7 (2026-10-29) — pedido por Omar: 2 pierna (punto débil), 2
+  // espalda+brazo (brazos flacos), 1 pecho+tríceps+hombro. Sin peso muerto
+  // rumano. Regla suya: cada zona del músculo UN ejercicio; repetir el mismo
+  // ejercicio en la semana = frecuencia, permitido. Excepción consciente:
+  // aperturas en máquina (el pecho solo va 1×/semana). Razonamiento y fuentes
+  // en body/training.md del AIOS.
   days: [
-    { id: "piernaA",    name: "Pierna A"   },
-    { id: "espaldaInf", name: "Espalda Inf" },
-    { id: "push",       name: "Push"       },
-    { id: "piernaB",    name: "Pierna B"   },
-    { id: "espaldaSup", name: "Espalda Sup" },
-    { id: "boxeo",      name: "Boxeo"      }
+    { id: "piernaA",    name: "Pierna A"        },
+    { id: "espaldaInf", name: "Espalda·Brazo A" },
+    { id: "push",       name: "Pecho·Tríceps"   },
+    { id: "piernaB",    name: "Pierna B"        },
+    { id: "espaldaSup", name: "Espalda·Brazo B" },
+    { id: "boxeo",      name: "Boxeo"           }
   ],
 
   // Ciclo de 7 días. Pierna A el día 1 y Pierna B el día 5 → máxima separación.
-  // Lumbar: hiperextensiones el día 2 y peso muerto rumano el día 5, 3 días aparte.
   splitRotation: ["piernaA", "espaldaInf", "push", "rest", "piernaB", "espaldaSup", "rest"],
 
   splitAnchor: {
@@ -57,45 +58,47 @@ const CONFIG = {
   },
 
   defaultExercises: [
-    // ── D1 · PIERNA A — cuádriceps (punto débil → prioridad) ───────────────
-    // v6: un ejercicio por zona del músculo. Las variantes de grupo son
-    // alternativas (se hace UNA), no ejercicios extra.
-    { name: "Hack Squat",                      gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 6,  repMax: 10, step: 5,    startWeight: 80  },
-    { name: "Sentadilla Libre",                gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 40  },
-    { name: "Prensa Inclinada",                gym: "gym", day: "piernaA",    group: "squat",  sets: 5, repMin: 10, repMax: 15, step: 5,    startWeight: 100 },
-    { name: "Extensión de Cuádriceps",        gym: "gym", day: "piernaA",    sets: 4, repMin: 15, repMax: 20, step: 5,    startWeight: 30  },
-    { name: "Gemelo de Pie",                   gym: "gym", day: "piernaA",    sets: 4, repMin: 12, repMax: 20, step: 5,    startWeight: 40  },
+    // ── D1 · PIERNA A (pesada) — cuádriceps · femoral · gemelo ────────────
+    // Las variantes de grupo son alternativas (se hace UNA), no ejercicios extra.
+    { name: "Hack Squat",                      gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 6,  repMax: 10, step: 5,    startWeight: 80  },
+    { name: "Sentadilla Libre",                gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 40  },
+    { name: "Prensa Inclinada",                gym: "gym", day: "piernaA",    group: "squat",  sets: 4, repMin: 8,  repMax: 12, step: 5,    startWeight: 100 },
+    { name: "Curl Femoral Sentado",            gym: "gym", day: "piernaA",    sets: 4, repMin: 8,  repMax: 12, step: 5,    startWeight: 30  },
+    { name: "Extensión de Cuádriceps",         gym: "gym", day: "piernaA",    sets: 3, repMin: 10, repMax: 15, step: 5,    startWeight: 30  },
+    { name: "Gemelo de Pie",                   gym: "gym", day: "piernaA",    sets: 4, repMin: 8,  repMax: 12, step: 5,    startWeight: 40  },
 
-    // ── D2 · ESPALDA INFERIOR — dorsal · bíceps · ANTEBRAZO completo ───────
-    // Antebrazo = punto débil: aquí van sus 4 zonas (braquiorradial, extensores,
-    // flexores, agarre). Las 2ª dosis repiten el ejercicio del día 5 → frecuencia.
+    // ── D2 · ESPALDA·BRAZO A — dorsal · bíceps · tríceps 2ª · antebrazo ────
     { name: "Jalón Agarre Abierto",            gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, step: 2.5,  startWeight: 50  },
     { name: "Dominadas",                       gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, bw: true },
     { name: "Curl Bíceps Inclinado 45°",       gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 10  },
+    { name: "Extensión Tríceps Sobre la Cabeza 2ª Dosis", gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 2.5, startWeight: 20 },
     { name: "Curl Inverso 2ª Dosis",           gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
     { name: "Curl Muñeca Polea Supino",        gym: "gym", day: "espaldaInf", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
-    { name: "Extensión Muñeca Polea 2ª Dosis", gym: "gym", day: "espaldaInf", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
     { name: "Colgado en Barra · segundos",     gym: "gym", day: "espaldaInf", sets: 3, repMin: 20, repMax: 45, bw: true },
 
-    // ── D3 · PUSH — pecho medio · pecho superior · lateral · tríceps ──────
-    { name: "Press Banca Barra",               gym: "gym", day: "push",       sets: 4, repMin: 6,  repMax: 8,  step: 2.5,  startWeight: 60  },
+    // ── D3 · PECHO·TRÍCEPS·HOMBRO ─────────────────────────────────────────
+    { name: "Press Banca Barra",               gym: "gym", day: "push",       sets: 4, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 60  },
     { name: "Press Inclinado Mancuernas",      gym: "gym", day: "push",       sets: 4, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 22  },
-    { name: "Elevaciones Laterales Mancuernas",gym: "gym", day: "push",       group: "lateral", sets: 5, repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
-    { name: "Elevaciones Laterales Cable",     gym: "gym", day: "push",       group: "lateral", sets: 5, repMin: 12, repMax: 20, step: 1.25, startWeight: 5   },
+    { name: "Aperturas Pecho Máquina",         gym: "gym", day: "push",       sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 30  },
+    { name: "Elevaciones Laterales Mancuernas",gym: "gym", day: "push",       group: "lateral", sets: 4, repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
+    { name: "Elevaciones Laterales Cable",     gym: "gym", day: "push",       group: "lateral", sets: 4, repMin: 12, repMax: 20, step: 1.25, startWeight: 5   },
     { name: "Extensión Tríceps Sobre la Cabeza",gym:"gym", day: "push",       sets: 4, repMin: 10, repMax: 15, step: 2.5,  startWeight: 20  },
 
-    // ── D4 · PIERNA B — femoral · glúteo ──────────────────────────────────
-    { name: "Peso Muerto Rumano",              gym: "gym", day: "piernaB",    sets: 4, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 60  },
-    { name: "Curl Femoral Tumbado",            gym: "gym", day: "piernaB",    sets: 4, repMin: 12, repMax: 15, step: 2.5,  startWeight: 30  },
-    { name: "Gemelo de Pie Multipower",        gym: "gym", day: "piernaB",    sets: 4, repMin: 12, repMax: 20, step: 5,    startWeight: 40  },
+    // ── D4 · PIERNA B (más reps, más estiramiento) — 2ª dosis + cadera ─────
+    { name: "Hack Squat · B",                  gym: "gym", day: "piernaB",    group: "squatB", sets: 3, repMin: 10, repMax: 15, step: 5,    startWeight: 60  },
+    { name: "Prensa Inclinada · B",            gym: "gym", day: "piernaB",    group: "squatB", sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 80  },
+    { name: "Hiperextensiones",                gym: "gym", day: "piernaB",    sets: 3, repMin: 10, repMax: 15, bw: true },
+    { name: "Curl Femoral Sentado · B",        gym: "gym", day: "piernaB",    sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 25  },
+    { name: "Extensión de Cuádriceps · B",     gym: "gym", day: "piernaB",    sets: 3, repMin: 15, repMax: 20, step: 5,    startWeight: 25  },
+    { name: "Gemelo de Pie Multipower",        gym: "gym", day: "piernaB",    sets: 4, repMin: 15, repMax: 20, step: 5,    startWeight: 40  },
 
-    // ── D5 · ESPALDA SUPERIOR — trapecio · post. · lateral 2ª · antebrazo ──
+    // ── D5 · ESPALDA·BRAZO B — espalda media · post. · lateral 2ª · brazo ──
     { name: "Remo con Barra",                  gym: "gym", day: "espaldaSup", group: "hrow",   sets: 4, repMin: 6,  repMax: 10, step: 2.5,  startWeight: 40  },
-    { name: "Remo Máquina Horizontal",         gym: "gym", day: "espaldaSup", group: "hrow",   sets: 4, repMin: 10, repMax: 12, step: 2.5,  startWeight: 50  },
-    { name: "Encogimientos Mancuernas",        gym: "gym", day: "espaldaSup", sets: 4, repMin: 12, repMax: 20, step: 2.5,  startWeight: 20  },
+    { name: "Remo Máquina Horizontal",         gym: "gym", day: "espaldaSup", group: "hrow",   sets: 4, repMin: 8,  repMax: 12, step: 2.5,  startWeight: 50  },
     { name: "Face Pulls Polea Alta",           gym: "gym", day: "espaldaSup", sets: 3, repMin: 15, repMax: 20, step: 2.5,  startWeight: 15  },
     { name: "Elevaciones Laterales 2ª Dosis",  gym: "gym", day: "espaldaSup", sets: 4, repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
-    { name: "Curl Inverso con Barra",          gym: "gym", day: "espaldaSup", sets: 4, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
+    { name: "Curl Predicador",                 gym: "gym", day: "espaldaSup", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 20  },
+    { name: "Curl Inverso con Barra",          gym: "gym", day: "espaldaSup", sets: 3, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
     { name: "Extensión Muñeca Polea Prono",    gym: "gym", day: "espaldaSup", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   }
   ]
 };
@@ -2228,9 +2231,12 @@ details.po-more[open] > summary::after { content: '–'; }
     // v6 (2026-10-17): además retira los que repetían zona dentro del propio
     // v5 (Omar: "solo los esenciales, cada parte del músculo una vez") y mete
     // el bloque de antebrazo completo en Espalda Inf.
+    // v7 (2026-10-29): 2 pierna · 2 espalda+brazo · 1 pecho+tríceps, sin peso
+    // muerto rumano; vuelven las hiperextensiones (a Pierna B) y los días se
+    // renombran. Misma lógica: archivar, fundir, aplicar series/reps, añadir.
     // ============================================================
-    if (!s.programV6) {
-      s.programV6 = true;
+    if (!s.programV7) {
+      s.programV7 = true;
       const RETIRED = [
         'Pecho Superior Máquina', 'Fondos Máquina / Press Francés', 'Tríceps Polea Cuerda',
         'Extensión Tríceps Polea', 'Gemelos Máquina', 'Pallof Press Polea',
@@ -2240,7 +2246,10 @@ details.po-more[open] > summary::after { content: '–'; }
         // v6 — solapes dentro del v5
         'Zancadas Mancuernas', 'Búlgara Mancuernas', 'Hip Thrust Barra',
         'Press Hombro Mancuernas', 'Aperturas Pecho Cable', 'Remo Polea Baja',
-        'Hiperextensiones', 'Curl Martillo Mancuerna'
+        'Curl Martillo Mancuerna',
+        // v7
+        'Peso Muerto Rumano', 'Curl Femoral Tumbado', 'Encogimientos Mancuernas',
+        'Extensión Muñeca Polea 2ª Dosis'
       ];
       const PROG = {};
       (CONFIG.defaultExercises || []).forEach(function (ne) { PROG[ne.name] = ne; });
@@ -2255,6 +2264,7 @@ details.po-more[open] > summary::after { content: '–'; }
         // Los nombres del programa son únicos: el día sale del programa. (En
         // una instalación limpia la v5 mandaba a Push todo lo que no conocía.)
         e.day = p.day;
+        e.archived = false; // p. ej. Hiperextensiones, archivadas en v6, vuelven en v7
         if (kept[k]) {
           // Mismo ejercicio dos veces (el viejo lo tenía en Push y en Pull):
           // un solo ejercicio con el histórico de los dos, ordenado por fecha.
@@ -2273,12 +2283,25 @@ details.po-more[open] > summary::after { content: '–'; }
       Object.keys(PROG).forEach(function (name, i) {
         if (kept[name]) return;
         const ne = PROG[name];
-        const add = Object.assign({ id: 'v6_' + Date.now() + '_' + i, bw: false, group: null }, ne);
+        const add = Object.assign({ id: 'v7_' + Date.now() + '_' + i, bw: false, group: null }, ne);
         add.equip = add.bw ? 'other' : inferEquip(add.name);
         if (add.equip === 'dumbbell') add.step = 2;
         else if (add.equip === 'cable') add.step = 5;
         s.exercises.push(add);
       });
+      // Nombres de día nuevos (por id) + la rotación, que se guarda por NOMBRE
+      const OLDNAME = {}, NEWNAME = {};
+      (s.days || []).forEach(function (d) { OLDNAME[d.id] = d.name; });
+      (CONFIG.days || []).forEach(function (d) { NEWNAME[d.id] = d.name; });
+      if (Array.isArray(s.days)) s.days.forEach(function (d) { if (NEWNAME[d.id]) d.name = NEWNAME[d.id]; });
+      if (Array.isArray(s.splitRotation)) {
+        s.splitRotation = s.splitRotation.map(function (n) {
+          for (const id in OLDNAME) {
+            if (OLDNAME[id] && NEWNAME[id] && String(n).toLowerCase() === OLDNAME[id].toLowerCase()) return NEWNAME[id];
+          }
+          return n;
+        });
+      }
       s.currentEx = null;
     }
     s.logs =(s.logs && typeof s.logs === 'object') ? s.logs : {};

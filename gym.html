@@ -2317,15 +2317,20 @@ details.po-more[open] > summary::after { content: '–'; }
       }
       s.currentEx = null;
     }
-    // Dominadas antes que el jalón (2026-11-01, Omar): el ejercicio más duro con
-    // los dorsales frescos. Solo mueve la posición; mismo id → histórico intacto.
-    if (!s.vpullOrderV1) {
-      s.vpullOrderV1 = true;
-      const iD = s.exercises.findIndex(function (e) { return e && e.name === 'Dominadas'; });
-      const iJ = s.exercises.findIndex(function (e) { return e && e.name === 'Jalón Agarre Abierto'; });
-      if (iD > iJ && iJ >= 0) {
-        s.exercises.splice(iJ, 0, s.exercises.splice(iD, 1)[0]);
-      }
+    // Orden de los ejercicios (2026-11-01, Omar): compuesto pesado primero,
+    // aislamiento después, antebrazo/agarre y gemelo al final. Las copias guardadas
+    // conservan el orden de programas viejos (p. ej. el jalón antes que las
+    // dominadas), así que se recolocan los del programa según CONFIG; el resto
+    // (archivados, añadidos a mano) se queda en su hueco. Mismo id → histórico intacto.
+    if (!s.programOrderV1) {
+      s.programOrderV1 = true;
+      const rank = {};
+      (CONFIG.defaultExercises || []).forEach(function (ne, i) { rank[ne.name] = i; });
+      const slots = [];
+      s.exercises.forEach(function (e, i) { if (e && rank[e.name] != null) slots.push(i); });
+      const ordered = slots.map(function (i) { return s.exercises[i]; })
+        .sort(function (a, b) { return rank[a.name] - rank[b.name]; });
+      slots.forEach(function (i, k) { s.exercises[i] = ordered[k]; });
     }
     s.logs =(s.logs && typeof s.logs === 'object') ? s.logs : {};
     s.filterGym = s.filterGym || s.gyms[0].id;

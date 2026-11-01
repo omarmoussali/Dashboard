@@ -68,8 +68,8 @@ const CONFIG = {
     { name: "Gemelo de Pie",                   gym: "gym", day: "piernaA",    sets: 4, repMin: 8,  repMax: 12, step: 5,    startWeight: 40  },
 
     // ── D2 · ESPALDA·BRAZO A — dorsal · bíceps · tríceps 2ª · antebrazo ────
-    { name: "Jalón Agarre Abierto",            gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, step: 2.5,  startWeight: 50  },
     { name: "Dominadas",                       gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, bw: true },
+    { name: "Jalón Agarre Abierto",            gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, step: 2.5,  startWeight: 50  },
     { name: "Curl Bíceps Inclinado 45°",       gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 10  },
     { name: "Extensión Tríceps Sobre la Cabeza 2ª Dosis", gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 2.5, startWeight: 20 },
     { name: "Curl Inverso Polea",              gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 10  },
@@ -2316,6 +2316,16 @@ details.po-more[open] > summary::after { content: '–'; }
         });
       }
       s.currentEx = null;
+    }
+    // Dominadas antes que el jalón (2026-11-01, Omar): el ejercicio más duro con
+    // los dorsales frescos. Solo mueve la posición; mismo id → histórico intacto.
+    if (!s.vpullOrderV1) {
+      s.vpullOrderV1 = true;
+      const iD = s.exercises.findIndex(function (e) { return e && e.name === 'Dominadas'; });
+      const iJ = s.exercises.findIndex(function (e) { return e && e.name === 'Jalón Agarre Abierto'; });
+      if (iD > iJ && iJ >= 0) {
+        s.exercises.splice(iJ, 0, s.exercises.splice(iD, 1)[0]);
+      }
     }
     s.logs =(s.logs && typeof s.logs === 'object') ? s.logs : {};
     s.filterGym = s.filterGym || s.gyms[0].id;

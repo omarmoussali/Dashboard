@@ -72,7 +72,7 @@ const CONFIG = {
     { name: "Dominadas",                       gym: "gym", day: "espaldaInf", group: "vpull",  sets: 5, repMin: 6,  repMax: 12, bw: true },
     { name: "Curl Bíceps Inclinado 45°",       gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 10  },
     { name: "Extensión Tríceps Sobre la Cabeza 2ª Dosis", gym: "gym", day: "espaldaInf", sets: 3, repMin: 10, repMax: 15, step: 2.5, startWeight: 20 },
-    { name: "Curl Inverso 2ª Dosis",           gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
+    { name: "Curl Inverso Polea",              gym: "gym", day: "espaldaInf", sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 10  },
     { name: "Curl Muñeca Polea Supino",        gym: "gym", day: "espaldaInf", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   },
     { name: "Colgado en Barra · segundos",     gym: "gym", day: "espaldaInf", sets: 3, repMin: 20, repMax: 45, bw: true },
 
@@ -98,7 +98,7 @@ const CONFIG = {
     { name: "Face Pulls Polea Alta",           gym: "gym", day: "espaldaSup", sets: 3, repMin: 15, repMax: 20, step: 2.5,  startWeight: 15  },
     { name: "Elevaciones Laterales 2ª Dosis",  gym: "gym", day: "espaldaSup", sets: 4, repMin: 12, repMax: 20, step: 1.25, startWeight: 8   },
     { name: "Curl Predicador",                 gym: "gym", day: "espaldaSup", sets: 3, repMin: 10, repMax: 15, step: 1.25, startWeight: 20  },
-    { name: "Curl Inverso con Barra",          gym: "gym", day: "espaldaSup", sets: 3, repMin: 12, repMax: 15, step: 1.25, startWeight: 15  },
+    { name: "Curl Inverso Polea 2ª Dosis",     gym: "gym", day: "espaldaSup", sets: 3, repMin: 12, repMax: 15, step: 5,    startWeight: 10  },
     { name: "Extensión Muñeca Polea Prono",    gym: "gym", day: "espaldaSup", sets: 3, repMin: 15, repMax: 20, step: 1.25, startWeight: 5   }
   ]
 };
@@ -2235,6 +2235,19 @@ details.po-more[open] > summary::after { content: '–'; }
     // muerto rumano; vuelven las hiperextensiones (a Pierna B) y los días se
     // renombran. Misma lógica: archivar, fundir, aplicar series/reps, añadir.
     // ============================================================
+    // Curl inverso en polea (2026-11-01, decisión de Omar): se renombra antes
+    // del bloque v7 para que un estado anterior lo reconozca por el nombre
+    // nuevo. Mismo id → el histórico se conserva.
+    if (!s.reverseCurlCableV1) {
+      s.reverseCurlCableV1 = true;
+      const RENAME = { 'Curl Inverso 2ª Dosis': 'Curl Inverso Polea', 'Curl Inverso con Barra': 'Curl Inverso Polea 2ª Dosis' };
+      s.exercises.forEach(function (e) {
+        if (!e || !RENAME[e.name]) return;
+        e.name = RENAME[e.name];
+        e.equip = 'cable';
+        e.step = 5;
+      });
+    }
     if (!s.programV7) {
       s.programV7 = true;
       const RETIRED = [

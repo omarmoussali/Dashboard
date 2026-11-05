@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Facturación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+<script src="lock.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+/* FACTURACIÓN v1 (2026-11-05) — ¿merece la pena hacer 12 h hoy o mejor 8 h?
+   Regla del plus (Omar): por encima de 4.100 €/mes facturados se lleva el 35%.
+   Fijo y descuentos calibrados con su nómina de octubre 2026 (ver ajustes). */
+:root{
+  --text-primary:#FAFAFA;--text-secondary:#B8B6B0;--text-tertiary:#76746E;
+  --emerald:#6BE3A4;--warning:#F2C063;--danger:#FF6B6B;
+  --s-real:#2FA872;--s-8:#6A7CF0;--s-12:#E2703A;--grid:rgba(255,255,255,.07);
+  --card:rgba(255,255,255,.03);--line:rgba(255,255,255,.07);--surface:#0c0c0e;
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--serif:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;background:#050506;color:var(--text-secondary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:4px max(16px,env(safe-area-inset-right)) max(60px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+h1{margin:6px 0 0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:38px;color:#EDEAE2}
+.sub{display:flex;align-items:center;gap:10px;margin-top:6px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-tertiary)}
+.sub button{background:none;border:1px solid var(--line);color:var(--text-secondary);border-radius:8px;padding:4px 9px;font-family:var(--mono);cursor:pointer}
+.eyebrow{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary);margin:24px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card+.card{margin-top:10px}
+.verdict{border-width:1px;border-style:solid}
+.verdict.long{border-color:rgba(226,112,58,.45);background:rgba(226,112,58,.07)}
+.verdict.short{border-color:rgba(106,124,240,.45);background:rgba(106,124,240,.07)}
+.verdict .k{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--text-tertiary)}
+.verdict .big{font-family:var(--serif);font-style:italic;font-size:40px;color:var(--text-primary);line-height:1.1;margin-top:4px}
+.verdict p{margin:8px 0 0;font-size:14px;line-height:1.5;color:#E4E1DA}
+.kpis{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--card)}
+.kpi span{display:block;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-tertiary)}
+.kpi b{display:block;margin-top:4px;font-family:var(--mono);font-size:20px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.kpi small{font-size:11px;color:var(--text-tertiary)}
+.bar{height:6px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--emerald);border-radius:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid}
+.legend i.dash{border-top-style:dashed}
+.chartbox{position:relative}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:#1a1a1d;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--text-primary);white-space:nowrap;transform:translate(-50%,-110%);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.tip small{display:block;color:var(--text-tertiary);font-family:var(--mono);font-size:10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+label.f{min-width:0;display:flex;flex-direction:column;gap:5px;font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary)}
+input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text-primary);font-size:16px;font-family:var(--font)}
+.btn{display:block;width:100%;margin-top:12px;padding:14px;border:0;border-radius:12px;background:var(--emerald);color:#04110a;font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text-secondary)}
+.h{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.h .d{flex:0 0 76px;font-family:var(--mono);font-size:11px;color:var(--text-tertiary)}
+.h .b{flex:1;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.h .b small{color:var(--text-tertiary)}
+.h .x{background:none;border:0;color:var(--text-tertiary);font-size:20px;cursor:pointer}
+.empty{font-size:14px;color:var(--text-tertiary)}
+.note{font-size:12px;line-height:1.5;color:var(--text-tertiary);margin:8px 0 0}
+details.card summary{cursor:pointer;list-style:none;font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--text-tertiary)}
+details.card summary::-webkit-details-marker{display:none}
+.days{display:flex;gap:6px;margin-top:6px}
+.days label{flex:1;text-align:center;border:1px solid var(--line);border-radius:9px;padding:8px 0;font-family:var(--mono);font-size:11px;cursor:pointer}
+.days input{display:none}
+.days label.on{background:rgba(107,227,164,.14);color:var(--emerald);border-color:rgba(107,227,164,.35)}
+table.t{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+table.t td{padding:6px 0;border-bottom:1px solid var(--line)}
+table.t td:last-child{text-align:right;font-family:var(--mono);color:var(--text-primary)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Facturación</h1>
+  <div class="sub"><button id="prevM" aria-label="Mes anterior">‹</button><span id="monthLbl">—</span><button id="nextM" aria-label="Mes siguiente">›</button></div>
+
+  <div class="eyebrow" id="verdictK">Hoy</div>
+  <div class="card verdict" id="verdict">
+    <div class="k" id="vk">Recomendación</div>
+    <div class="big" id="vbig">—</div>
+    <p id="vtxt"></p>
+  </div>
+
+  <div class="eyebrow">Objetivos</div>
+  <div class="kpis">
+    <div class="kpi"><span>Facturado este mes</span><b id="kFact">—</b><small id="kFactS"></small><div class="bar"><i id="kFactBar"></i></div></div>
+    <div class="kpi"><span>Objetivo diario</span><b id="kDay">—</b><small id="kDayS"></small></div>
+    <div class="kpi"><span>Esta semana</span><b id="kWeek">—</b><small id="kWeekS"></small><div class="bar"><i id="kWeekBar"></i></div></div>
+    <div class="kpi"><span>Tu media</span><b id="kRate">—</b><small id="kRateS"></small></div>
+  </div>
+
+  <div class="eyebrow">El mes</div>
+  <div class="card">
+    <div class="legend" id="legend">
+      <span><i style="border-color:var(--s-real)"></i>Facturado</span>
+      <span><i class="dash" style="border-color:var(--s-12)"></i>Si haces 12 h</span>
+      <span><i class="dash" style="border-color:var(--s-8)"></i>Si haces 8 h</span>
+      <span><i class="dash" style="border-color:var(--text-tertiary)"></i>Objetivo</span>
+    </div>
+    <div class="chartbox"><svg id="chart" viewBox="0 0 520 260" role="img" aria-label="Facturación acumulada del mes con proyecciones a 8 y 12 horas"></svg><div class="tip" id="tip" hidden></div></div>
+    <table class="t" id="chartTable" aria-label="Tabla de la gráfica"></table>
+  </div>
+
+  <div class="eyebrow">Lo que ganas</div>
+  <div class="card">
+    <table class="t" id="money"></table>
+    <p class="note" id="moneyNote"></p>
+  </div>
+
+  <div class="eyebrow">Apuntar el día</div>
+  <div class="card">
+    <div class="grid2">
+      <label class="f">Día<input id="fDate" type="date"></label>
+      <label class="f">Facturado €<input id="fFact" type="number" inputmode="decimal" step="0.01" placeholder="ej. 185"></label>
+      <label class="f">Horas trabajadas<input id="fHours" type="number" inputmode="decimal" step="0.25" placeholder="12"></label>
+    </div>
+    <button class="btn" id="saveDay">Guardar día</button>
+    <p class="note">Un registro por día: si guardas el mismo día otra vez, se sustituye.</p>
+  </div>
+
+  <div class="eyebrow">Días apuntados</div>
+  <div id="hist"></div>
+
+  <details class="card" style="margin-top:24px">
+    <summary>Ajustes y cómo se calcula</summary>
+    <div class="grid2" style="margin-top:12px">
+      <label class="f">Objetivo mensual €<input id="cT" type="number" inputmode="decimal"></label>
+      <label class="f">% sobre el exceso<input id="cP" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f">Horas día corto<input id="cHN" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f">Horas día largo<input id="cHL" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f">Mínimo €/h neto por hora extra<input id="cMin" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f">€/h si aún no hay datos<input id="cRate" type="number" inputmode="decimal" step="0.5"></label>
+      <label class="f">Fijo neto mensual €<input id="cFix" type="number" inputmode="decimal"></label>
+      <label class="f">Neto / bruto<input id="cNet" type="number" inputmode="decimal" step="0.0001"></label>
+    </div>
+    <div class="f" style="margin-top:12px;font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary)">Días que trabajas</div>
+    <div class="days" id="cDays"></div>
+    <label class="f" style="margin-top:12px">Total facturado del mes anterior (si no lo apuntaste aquí)<input id="cPrev" type="number" inputmode="decimal" placeholder="ej. 4534"></label>
+    <button class="btn ghost" id="saveCfg">Guardar ajustes</button>
+    <p class="note"><b>Cómo decide:</b> proyecta tu mes con tu media de €/hora si haces el resto de días a 8 h y a 12 h. La diferencia de plus entre los dos casos, dividida entre las horas extra, es lo que vale <i>cada hora extra</i>. Si vale menos que tu mínimo, la recomendación es 8 h y esas horas van al gym o a descansar.</p>
+    <p class="note"><b>Calibrado con tu nómina de octubre 2026:</b> fijo bruto 1.452,27 € (base 1.236,12 + prorrata de extras 206,02 + nocturnidad 10,13) × 0,9361 = ~1.360 € neto. Descuentos 6,39% (Seguridad Social; IRPF 0% ese mes). El plus aparece como «Variable» (152 €): si es el de septiembre, facturaste ~4.534 € (152 / 0,35 + 4.100). Las propinas no se cuentan.</p>
+    <p class="note">Antes de bajar a 8 h, confirma que tu contrato no exige un mínimo de horas.</p>
+  </details>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const LOGS = 'fact:logs', CFG = 'fact:cfg', MONTHS = 'fact:months';
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, '0');
+  const eur = (n, d) => (isFinite(n) ? n : 0).toLocaleString('es-ES', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0, useGrouping: 'always' }) + ' €';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function read(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  const DEF = { T: 4100, P: 35, HN: 8, HL: 12, MIN: 10, RATE: 16, FIX: 1360, NET: 0.9361, DAYS: [1, 2, 3, 4, 5] };
+  let logs = [], cfg = {}, months = {};
+  function load() {
+    logs = read(LOGS, []); if (!Array.isArray(logs)) logs = [];
+    cfg = Object.assign({}, DEF, read(CFG, {}));
+    months = read(MONTHS, {}) || {};
+  }
+  const key = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const today = () => key(new Date());
+  let view = new Date(); view.setDate(1);
+  const ym = d => d.getFullYear() + '-' + pad(d.getMonth() + 1);
+  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function bonusNet(total) { return Math.max(0, total - cfg.T) * (cfg.P / 100) * cfg.NET; }
+  function monthLogs(y) { return logs.filter(l => l.date.slice(0, 7) === y).sort((a, b) => a.date < b.date ? -1 : 1); }
+  function monthTotal(y) {
+    const L = monthLogs(y);
+    if (L.length) return L.reduce((a, l) => a + l.fact, 0);
+    return months[y] && isFinite(months[y].total) ? months[y].total : null;
+  }
+
+  function calc() {
+    const y = ym(view), L = monthLogs(y);
+    const year = view.getFullYear(), mon = view.getMonth();
+    const N = new Date(year, mon + 1, 0).getDate();
+    const logged = new Set(L.map(l => l.date));
+    const t = today();
+    const remaining = [];
+    for (let d = 1; d <= N; d++) {
+      const k = year + '-' + pad(mon + 1) + '-' + pad(d);
+      const wd = new Date(year, mon, d).getDay();
+      if (k >= t && !logged.has(k) && cfg.DAYS.indexOf(wd) >= 0) remaining.push(k);
+    }
+    const F = L.reduce((a, l) => a + l.fact, 0);
+    const H = L.reduce((a, l) => a + l.hours, 0);
+    let rate = H > 0 ? F / H : null, rateSrc = 'este mes';
+    if (!rate) {
+      const all = logs.filter(l => l.hours > 0);
+      const f = all.reduce((a, l) => a + l.fact, 0), h = all.reduce((a, l) => a + l.hours, 0);
+      if (h > 0) { rate = f / h; rateSrc = 'meses anteriores'; } else { rate = cfg.RATE; rateSrc = 'estimada (sin datos aún)'; }
+    }
+    const d = remaining.length;
+    const p8 = F + rate * cfg.HN * d, p12 = F + rate * cfg.HL * d;
+    const b8 = bonusNet(p8), b12 = bonusNet(p12);
+    const extraH = (cfg.HL - cfg.HN) * d;
+    const perExtra = extraH > 0 ? (b12 - b8) / extraH : 0;
+    const need = Math.max(0, cfg.T - F);
+    const perDay = d ? need / d : 0;
+    // semana (lunes-domingo) que contiene hoy, dentro del mes visto
+    const now = new Date(); const mon0 = new Date(now); mon0.setHours(0, 0, 0, 0); mon0.setDate(mon0.getDate() - ((mon0.getDay() + 6) % 7));
+    const sun = new Date(mon0); sun.setDate(sun.getDate() + 6);
+    const inWeek = k => k >= key(mon0) && k <= key(sun);
+    const weekFact = L.filter(l => inWeek(l.date)).reduce((a, l) => a + l.fact, 0);
+    const weekRem = remaining.filter(inWeek).length;
+    const weekGoal = weekFact + perDay * weekRem;
+    return { y, L, N, year, mon, remaining, d, F, H, rate, rateSrc, p8, p12, b8, b12, perExtra, need, perDay, weekFact, weekGoal, weekRem };
+  }
+
+  function renderVerdict(c) {
+    const v = $('verdict'), isCur = ym(view) === ym(new Date());
+    $('verdictK').textContent = isCur ? (c.remaining[0] === today() ? 'Hoy' : 'Próximo día de trabajo') : 'Mes ' + (ym(view) < ym(new Date()) ? 'cerrado' : 'futuro');
+    v.classList.remove('long', 'short');
+    if (!isCur || !c.d) {
+      $('vk').textContent = 'Resultado del mes';
+      $('vbig').textContent = eur(c.F) + ' facturados';
+      $('vtxt').textContent = c.F >= cfg.T ? 'Pasaste el objetivo: plus neto ~' + eur(bonusNet(c.F)) + ', se cobra en la nómina siguiente.' : 'No llegó al objetivo: ese mes no genera plus.';
+      return;
+    }
+    const long = c.perExtra >= cfg.MIN;
+    v.classList.add(long ? 'long' : 'short');
+    $('vk').textContent = 'Recomendación';
+    $('vbig').textContent = (long ? cfg.HL : cfg.HN) + ' h';
+    let why;
+    if (c.p12 <= cfg.T) why = 'Aunque hagas ' + cfg.HL + ' h todos los días que quedan, te quedas en ~' + eur(c.p12) + ': no llegas a ' + eur(cfg.T) + '. Las horas extra no te dan plus (0 €). Usa ese tiempo para el gym o descansar.';
+    else if (long) why = 'Cada hora extra te deja ~' + eur(c.perExtra, 2) + ' netos de plus, por encima de tu mínimo (' + eur(cfg.MIN, 0) + '/h). Con ' + cfg.HL + ' h el mes acaba en ~' + eur(c.p12) + '.';
+    else why = 'Cada hora extra te dejaría solo ~' + eur(c.perExtra, 2) + ' netos (tu mínimo: ' + eur(cfg.MIN, 0) + '/h). ' + (c.p8 >= cfg.T ? 'Con ' + cfg.HN + ' h ya llegas al objetivo.' : 'No compensa: mejor gym o descanso.');
+    $('vtxt').textContent = why;
+  }
+
+  function renderKpis(c) {
+    $('kFact').textContent = eur(c.F);
+    $('kFactS').textContent = Math.round(Math.min(100, c.F / cfg.T * 100)) + '% de ' + eur(cfg.T);
+    $('kFactBar').style.width = Math.min(100, c.F / cfg.T * 100) + '%';
+    if (!c.d) { $('kDay').textContent = '—'; $('kDayS').textContent = 'no quedan días'; }
+    else if (!c.need) { $('kDay').textContent = 'Hecho'; $('kDayS').textContent = 'objetivo superado'; }
+    else { $('kDay').textContent = eur(c.perDay); $('kDayS').textContent = '≈ ' + (c.perDay / c.rate).toFixed(1).replace('.', ',') + ' h a tu media · ' + c.d + ' días'; }
+    $('kWeek').textContent = eur(c.weekFact);
+    $('kWeekS').textContent = c.weekGoal > 0 ? 'meta ' + eur(c.weekGoal) + ' · ' + c.weekRem + ' días' : 'sin días esta semana';
+    $('kWeekBar').style.width = (c.weekGoal > 0 ? Math.min(100, c.weekFact / c.weekGoal * 100) : 0) + '%';
+    $('kRate').textContent = eur(c.rate, 1) + '/h';
+    $('kRateS').textContent = c.rateSrc;
+  }
+
+  function renderMoney(c) {
+    const prevD = new Date(view.getFullYear(), view.getMonth() - 1, 1), prevY = ym(prevD);
+    const prevTot = monthTotal(prevY);
+    const prevBonus = prevTot == null ? null : bonusNet(prevTot);
+    const rows = [
+      ['Fijo neto (base + extras prorrateadas)', eur(cfg.FIX)],
+      ['Plus de ' + MES[prevD.getMonth()] + ' (se cobra este mes)', prevBonus == null ? 'apunta su total' : eur(prevBonus)],
+      ['<b>Nómina estimada de ' + MES[view.getMonth()] + '</b>', prevBonus == null ? '≥ ' + eur(cfg.FIX) : eur(cfg.FIX + prevBonus)],
+      ['Plus que generas este mes si haces ' + cfg.HN + ' h', eur(c.b8)],
+      ['Plus que generas este mes si haces ' + cfg.HL + ' h', eur(c.b12)]
+    ];
+    $('money').innerHTML = rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('');
+    $('moneyNote').textContent = 'El plus de cada mes se cobra en la nómina del mes siguiente (así lo indica tu nómina de octubre). Cantidades netas aproximadas; las propinas van aparte.';
+  }
+
+  function renderChart(c) {
+    const W = 520, Hh = 260, m = { l: 46, r: 46, t: 14, b: 26 };
+    const iw = W - m.l - m.r, ih = Hh - m.t - m.b;
+    const maxY = Math.max(cfg.T * 1.1, c.p12 * 1.05, c.F * 1.05);
+    const X = d => m.l + (d - 1) / (c.N - 1) * iw;
+    const Y = v => m.t + ih - v / maxY * ih;
+    let cum = 0;
+    const pts = c.L.map(l => { cum += l.fact; return { d: +l.date.slice(8), v: cum, fact: l.fact, h: l.hours }; });
+    const isCur = ym(view) === ym(new Date());
+    const startDay = pts.length ? pts[pts.length - 1].d : 1;
+    const anchorDay = isCur ? Math.max(startDay, new Date().getDate() - (c.remaining[0] === today() ? 1 : 0)) : startDay;
+    let s = '';
+    const step = maxY > 6000 ? 2000 : 1000;
+    for (let v = 0; v <= maxY; v += step) {
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--grid)" stroke-width="1"/>';
+      s += '<text x="' + (m.l - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="10" fill="var(--text-tertiary)" font-family="ui-monospace,monospace">' + (v / 1000) + 'k</text>';
+    }
+    [1, 8, 15, 22, c.N].forEach(d => { s += '<text x="' + X(d) + '" y="' + (Hh - 6) + '" text-anchor="middle" font-size="10" fill="var(--text-tertiary)" font-family="ui-monospace,monospace">' + d + '</text>'; });
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(cfg.T) + '" y2="' + Y(cfg.T) + '" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-dasharray="2 4"/>';
+    s += '<text x="' + (W - m.r + 6) + '" y="' + (Y(cfg.T) + 4) + '" font-size="10" fill="var(--text-secondary)" font-family="ui-monospace,monospace">' + (cfg.T / 1000).toLocaleString('es-ES') + 'k</text>';
+    if (isCur && c.d) {
+      const x0 = X(Math.max(1, anchorDay)), y0 = Y(c.F);
+      [[c.p8, 'var(--s-8)', cfg.HN + ' h'], [c.p12, 'var(--s-12)', cfg.HL + ' h']].forEach(p => {
+        s += '<line x1="' + x0 + '" y1="' + y0 + '" x2="' + X(c.N) + '" y2="' + Y(p[0]) + '" stroke="' + p[1] + '" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>';
+        s += '<text x="' + (X(c.N) + 6) + '" y="' + (Y(p[0]) + 4) + '" font-size="10.5" fill="var(--text-secondary)" font-family="ui-monospace,monospace">' + p[2] + '</text>';
+      });
+    }
+    if (pts.length) {
+      const path = [{ d: 1, v: 0 }].concat(pts).map((p, i) => (i ? 'L' : 'M') + X(p.d).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
+      s += '<path d="' + path + '" fill="none" stroke="var(--s-real)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      pts.forEach(p => { s += '<circle cx="' + X(p.d) + '" cy="' + Y(p.v) + '" r="4" fill="var(--s-real)" stroke="var(--surface)" stroke-width="2"/>'; });
+    } else {
+      s += '<text x="' + (W / 2) + '" y="' + (Hh / 2) + '" text-anchor="middle" font-size="12" fill="var(--text-tertiary)">Apunta tu primer día para ver la gráfica</text>';
+    }
+    s += '<line id="xh" x1="0" x2="0" y1="' + m.t + '" y2="' + (m.t + ih) + '" stroke="var(--text-tertiary)" stroke-width="1" visibility="hidden"/>';
+    s += '<rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
+    const svg = $('chart'); svg.innerHTML = s;
+    const tip = $('tip'), xh = svg.querySelector('#xh');
+    function move(ev) {
+      if (!pts.length) return;
+      const r = svg.getBoundingClientRect();
+      const cx = (ev.clientX - r.left) / r.width * W;
+      let best = pts[0]; pts.forEach(p => { if (Math.abs(X(p.d) - cx) < Math.abs(X(best.d) - cx)) best = p; });
+      xh.setAttribute('x1', X(best.d)); xh.setAttribute('x2', X(best.d)); xh.setAttribute('visibility', 'visible');
+      tip.hidden = false;
+      tip.style.left = (X(best.d) / W * r.width) + 'px';
+      tip.style.top = (Y(best.v) / Hh * r.height) + 'px';
+      tip.innerHTML = '<small>día ' + best.d + ' · ' + best.h + ' h · ' + eur(best.fact) + '</small>' + eur(best.v) + ' acumulado';
+    }
+    function leave() { tip.hidden = true; xh.setAttribute('visibility', 'hidden'); }
+    svg.querySelector('#hit').addEventListener('pointermove', move);
+    svg.querySelector('#hit').addEventListener('pointerdown', move);
+    svg.querySelector('#hit').addEventListener('pointerleave', leave);
+    $('chartTable').innerHTML = '<tr><td>Proyección a ' + cfg.HN + ' h</td><td>' + eur(c.p8) + '</td></tr><tr><td>Proyección a ' + cfg.HL + ' h</td><td>' + eur(c.p12) + '</td></tr><tr><td>Días de trabajo restantes</td><td>' + c.d + '</td></tr>';
+  }
+
+  function renderHist(c) {
+    if (!c.L.length) { $('hist').innerHTML = '<p class="empty">Nada apuntado este mes.</p>'; return; }
+    $('hist').innerHTML = c.L.slice().reverse().map(l => {
+      const d = new Date(l.date + 'T12:00:00');
+      return '<div class="h"><div class="d">' + ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()] + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '</div><div class="b">' + eur(l.fact, 2) + ' <small>· ' + l.hours + ' h · ' + eur(l.hours ? l.fact / l.hours : 0, 1) + '/h</small></div><button class="x" data-d="' + esc(l.date) + '" aria-label="Borrar">×</button></div>';
+    }).join('');
+    $('hist').querySelectorAll('.x').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('¿Borrar el día ' + b.dataset.d + '?')) return;
+      logs = logs.filter(l => l.date !== b.dataset.d); write(LOGS, logs); render();
+    }));
+  }
+
+  function renderCfg() {
+    $('cT').value = cfg.T; $('cP').value = cfg.P; $('cHN').value = cfg.HN; $('cHL').value = cfg.HL;
+    $('cMin').value = cfg.MIN; $('cRate').value = cfg.RATE; $('cFix').value = cfg.FIX; $('cNet').value = cfg.NET;
+    const prevY = ym(new Date(view.getFullYear(), view.getMonth() - 1, 1));
+    $('cPrev').value = months[prevY] && isFinite(months[prevY].total) ? months[prevY].total : '';
+    $('cDays').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => '<label class="' + (cfg.DAYS.indexOf(d) >= 0 ? 'on' : '') + '"><input type="checkbox" value="' + d + '"' + (cfg.DAYS.indexOf(d) >= 0 ? ' checked' : '') + '>' + ['D','L','M','X','J','V','S'][d] + '</label>').join('');
+    $('cDays').querySelectorAll('input').forEach(i => i.addEventListener('change', () => i.parentNode.classList.toggle('on', i.checked)));
+  }
+
+  function render() {
+    $('monthLbl').textContent = MES[view.getMonth()] + ' ' + view.getFullYear();
+    const c = calc();
+    renderVerdict(c); renderKpis(c); renderChart(c); renderMoney(c); renderHist(c); renderCfg();
+  }
+
+  const num = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) ? v : null; };
+  $('fDate').value = today();
+  $('saveDay').addEventListener('click', () => {
+    const date = $('fDate').value, fact = num('fFact'), hours = num('fHours');
+    if (!date) return $('fDate').focus();
+    if (fact == null || fact < 0) return $('fFact').focus();
+    if (hours == null || hours <= 0) return $('fHours').focus();
+    logs = logs.filter(l => l.date !== date).concat([{ date, fact, hours }]);
+    write(LOGS, logs);
+    $('fFact').value = ''; $('fHours').value = '';
+    view = new Date(date + 'T12:00:00'); view.setDate(1);
+    render();
+  });
+  $('saveCfg').addEventListener('click', () => {
+    const set = (k, id, lo, hi) => { const v = num(id); if (v != null && v >= lo && v <= hi) cfg[k] = v; };
+    set('T', 'cT', 0, 100000); set('P', 'cP', 0, 100); set('HN', 'cHN', 1, 16); set('HL', 'cHL', 1, 18);
+    set('MIN', 'cMin', 0, 200); set('RATE', 'cRate', 1, 200); set('FIX', 'cFix', 0, 20000); set('NET', 'cNet', 0.3, 1);
+    if (cfg.HL <= cfg.HN) cfg.HL = cfg.HN + 1;
+    const days = [...$('cDays').querySelectorAll('input:checked')].map(i => +i.value);
+    if (days.length) cfg.DAYS = days;
+    const prevY = ym(new Date(view.getFullYear(), view.getMonth() - 1, 1)), pv = num('cPrev');
+    if (pv != null) months[prevY] = { total: pv }; else delete months[prevY];
+    write(CFG, cfg); write(MONTHS, months); render();
+  });
+  $('prevM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); render(); });
+  $('nextM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); render(); });
+
+  load(); render();
+  window.addEventListener('load', function () {
+    if (typeof initCloudSync !== 'function') return;
+    initCloudSync({ appKey: 'facturacion', syncedKeys: [LOGS, CFG, MONTHS], onApplied: function () { load(); render(); } });
+  });
+})();
+</script>
+</body>
+</html>

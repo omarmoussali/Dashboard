@@ -247,21 +247,63 @@ img, video, canvas, svg { max-width: 100%; }
 .po-day-nav-btn:disabled { opacity: 0.22; cursor: not-allowed; }
 
 /* ── Weekly completion badges ──────────────────────────────── */
-.week-badges {
-  display: flex; gap: 8px; margin-bottom: 18px;
-}
-.week-badge {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 9px 4px 8px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 12px;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.10em;
+.week-badges { margin-bottom: 18px; }
+.cyc-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin: 0 2px 8px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text-3);
 }
-.week-badge-icon { font-size: 15px; line-height: 1; }
+.cyc-head b { color: var(--text-1); font-weight: 800; }
+.cyc-state.good, .cyc-state.good b { color: var(--good); }
+.cyc-state.warn, .cyc-state.warn b { color: var(--warn); }
+.cyc-state.bad,  .cyc-state.bad b  { color: var(--bad); }
+.cyc-bar { height: 3px; margin: 0 2px 14px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.cyc-bar > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #34d399, #6ee7b7); transition: width 0.45s ease; }
+.cyc-row { display: flex; gap: 6px; }
+.week-badge {
+  position: relative; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 11px 2px 9px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-3);
+  transition: border-color 0.2s, background 0.2s;
+}
+.cyc-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cyc-ico {
+  position: relative; width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--c); background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.10);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+.cyc-tag {
+  position: absolute; right: -5px; bottom: -3px;
+  min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: 8.5px; font-weight: 900; letter-spacing: 0;
+  color: var(--text-2); background: #18181c; border: 1px solid rgba(255,255,255,0.14);
+}
+.week-badge.next { border-color: rgba(255,255,255,0.18); color: var(--text-1); background: rgba(255,255,255,0.035); }
+.week-badge.next .cyc-ico { border-color: var(--c); box-shadow: 0 0 16px -3px var(--c); }
+.cyc-next {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+  padding: 2px 6px; border-radius: 999px;
+  font-size: 7.5px; font-weight: 900; letter-spacing: 0.12em;
+  color: #0a0a0b; background: var(--text-1); white-space: nowrap;
+}
 .week-badge.done { border-color: rgba(110,231,183,0.30); color: var(--good); }
-.week-badge.done .week-badge-icon { color: var(--good); }
+.week-badge.done .cyc-ico {
+  color: #06281c; border-color: transparent;
+  background: linear-gradient(160deg, #6ee7b7, #34d399);
+  box-shadow: 0 4px 14px -4px rgba(52,211,153,0.6);
+}
+.week-badge.done .cyc-tag { color: var(--good); background: #0d2219; border-color: rgba(110,231,183,0.45); }
+.week-badge.extra { border-style: dashed; }
+.week-badge.urgent .cyc-ico { border-color: var(--bad); color: var(--bad); }
+.week-badge.warn .cyc-ico { border-color: var(--warn); color: var(--warn); }
 @keyframes badge-blink {
   0%, 100% { opacity: 1; }
   45%       { opacity: 0.18; }
@@ -1091,6 +1133,12 @@ details.po-more[open] > summary::after { content: '–'; }
   font-size: 13px;
 }
 .po-tw-row-name { font-weight: 600; color: var(--text-1); }
+.po-tw-row.is-last { border-color: rgba(110,231,183,0.35); background: rgba(110,231,183,0.06); }
+.po-tw-last {
+  display: inline-block; margin-right: 8px; padding: 2px 7px; border-radius: 999px;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase;
+  color: #0a0a0b; background: var(--good); vertical-align: 1px;
+}
 .po-tw-row-meta {
   font-size: 11px; color: var(--text-3);
   font-family: var(--font-mono);
@@ -3104,7 +3152,11 @@ details.po-more[open] > summary::after { content: '–'; }
       splitEl.textContent = assigned === 'rest' ? 'REST' : ((def ? def.name : assigned) + ' DAY').toUpperCase();
       splitEl.classList.toggle('is-rest', assigned === 'rest');
     } else {
-      splitEl.textContent = isGymToday() ? '↑ Elige split' : '—';
+      let nextName = null;
+      if (isGymToday()) {
+        try { const nx = computeCycle().next; const def = nx && state.days.find(x => x.id === nx); nextName = def ? def.name : null; } catch (e) {}
+      }
+      splitEl.textContent = isGymToday() ? (nextName ? '↑ Toca: ' + nextName : '↑ Elige split') : '—';
       splitEl.classList.remove('is-rest');
     }
     $('gymDayNextBtn').disabled = isGymToday();
@@ -3228,53 +3280,139 @@ details.po-more[open] > summary::after { content: '–'; }
     renderAll();
   }
 
-  // ── Weekly completion badges ─────────────────────────────────
-  function getWeekDays() {
-    const today = new Date();
-    const dow = today.getDay();
-    const mon = new Date(today);
-    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-    mon.setHours(0,0,0,0);
-    const days = [];
-    for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
-    return days;
+  // ── Ciclo de entreno (2026-11-21, pedido por Omar) ───────────
+  // La barra ya NO se reinicia el lunes: se reinicia solo cuando completas
+  // los días de pesas. Si una semana no llegas, lo compensas la siguiente.
+  // Boxeo es extra: se ve aparte y no cierra el ciclo.
+  // El día del ciclo cuenta desde tu primera sesión. Ámbar desde el día 6
+  // (o si ya no te dan los días), rojo cuando pasa de 7 días sin cerrarse.
+  const CYCLE_EPOCH = '2026-11-16';  // lunes de la semana del cambio → la barra actual se conserva
+  const CYCLE_EXTRA = ['boxeo'];
+  const CYCLE_COLORS = { pierna: '#60A5FA', espalda: '#C084FC', push: '#FB923C', boxeo: '#F472B6' };
+  const SPLIT_ICONS = {
+    pierna:  '<path d="M8.6 2.5C7 6 7.2 10 8.7 13.2L8.2 20.5h7.3v-1.2l-3.8-1.3.6-5.1C14 10 14.6 6 14.2 2.5"/><path d="M9.6 13.3h2.6"/>',
+    espalda: '<path d="M5 5.5h14l-3 13.5H8z"/><path d="M12 7.5v9.5"/><path d="M8.5 9.5c1.2 1 2.3 1.5 3.5 1.5s2.3-.5 3.5-1.5"/>',
+    push:    '<path d="M2.5 8h19"/><rect x="4.5" y="5" width="2.2" height="6" rx=".6"/><rect x="17.3" y="5" width="2.2" height="6" rx=".6"/><path d="M6 16h12"/><path d="M8 16v4M16 16v4"/><path d="M12 8v8"/>',
+    boxeo:   '<path d="M7 11V8a4.5 4.5 0 0 1 4.5-4.5H14A4 4 0 0 1 18 7.5v5a4 4 0 0 1-4 4H9.5A2.5 2.5 0 0 1 7 14z"/><path d="M7 11h4.5a1.8 1.8 0 0 0 0-3.6H10"/><path d="M9 16.5V20h6v-3.5"/>'
+  };
+  function splitKind(id) {
+    return /^pierna/i.test(id) ? 'pierna' : /^espalda/i.test(id) ? 'espalda' : (SPLIT_ICONS[id] ? id : null);
+  }
+  function splitIconSvg(id) {
+    const k = splitKind(id);
+    const body = k ? SPLIT_ICONS[k] : '<circle cx="12" cy="12" r="6"/>';
+    return '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+  }
+  function splitShort(name) { return (name || '').split('·')[0].replace(/\s+[AB]$/, '').trim(); }
+  function splitTag(name) { const m = /\s([AB])$/.exec(name || ''); return m ? m[1] : ''; }
+
+  // Orden del ciclo = orden de la rotación del programa (sin descansos ni extras).
+  function cycleSplitIds() {
+    const ids = state.days.map(d => d.id).filter(id => CYCLE_EXTRA.indexOf(id) < 0);
+    const out = [];
+    (CONFIG.splitRotation || []).concat(ids).forEach(id => {
+      if (ids.indexOf(id) >= 0 && out.indexOf(id) < 0) out.push(id);
+    });
+    return out;
+  }
+
+  // {YYYY-MM-DD: splitId} — lo que elegiste en la píldora manda; si no
+  // elegiste, se deduce de los ejercicios que registraste ese día.
+  function daySplitMap() {
+    const map = {}, votes = {};
+    state.exercises.forEach(ex => {
+      if (!ex || !ex.day) return;
+      (state.logs[ex.id] || []).forEach(l => {
+        const dk = wtDateKey(new Date(l.date));
+        votes[dk] = votes[dk] || {};
+        votes[dk][ex.day] = (votes[dk][ex.day] || 0) + 1;
+      });
+    });
+    Object.keys(votes).forEach(dk => {
+      const v = votes[dk];
+      map[dk] = Object.keys(v).sort((a, b) => v[b] - v[a])[0];
+    });
+    Object.keys(dayAssignments).forEach(dk => { map[dk] = dayAssignments[dk]; });
+    return map;
+  }
+
+  function daysBetween(aDk, bDk) {
+    const a = wtParseKey(aDk), b = wtParseKey(bDk);
+    return Math.round((b - a) / 86400000);
+  }
+
+  function computeCycle() {
+    const ids = cycleSplitIds();
+    const todayDk = wtDateKey(new Date());
+    const map = daySplitMap();
+    const dks = Object.keys(map).filter(dk => dk >= CYCLE_EPOCH && dk <= todayDk).sort();
+    let start = null, done = new Set(), lastClosed = null;
+    dks.forEach(dk => {
+      const sid = map[dk];
+      if (ids.indexOf(sid) < 0) return;
+      if (!start) start = dk;
+      done.add(sid);
+      if (ids.every(id => done.has(id))) { lastClosed = { start: start, end: dk }; start = null; done = new Set(); }
+    });
+    // Recién cerrado hoy → enséñalo completo hasta mañana (que se vea el 5/5).
+    const showClosed = !start && lastClosed && lastClosed.end === todayDk;
+    const shown = showClosed ? new Set(ids) : done;
+    const from = showClosed ? lastClosed.start : start;
+    const extrasFrom = from || (lastClosed ? lastClosed.end : CYCLE_EPOCH);
+    const extrasDone = new Set();
+    dks.forEach(dk => {
+      if (CYCLE_EXTRA.indexOf(map[dk]) >= 0 && (from ? dk >= from : dk > extrasFrom)) extrasDone.add(map[dk]);
+    });
+    const dayN = from ? daysBetween(from, todayDk) + 1 : 0;
+    const missing = ids.filter(id => !shown.has(id));
+    return { ids, done: shown, missing, start: from, dayN, closed: !!showClosed, lastClosed, extrasDone,
+             next: showClosed ? null : (missing[0] || null) };
   }
 
   function renderWeeklyBadges() {
     const container = $('weekBadges');
     if (!container) return;
-    const weekDays = getWeekDays();
-    const todayDk = wtDateKey(new Date());
-    const todayIdx = weekDays.findIndex(d => wtDateKey(d) === todayDk);
-    const daysLeft = todayIdx >= 0 ? 7 - todayIdx : 1;
-    const splits = state.days;
-    const doneSplits = new Set();
-    weekDays.forEach(d => {
-      const a = dayAssignments[wtDateKey(d)];
-      if (a && a !== 'rest') doneSplits.add(a);
-    });
-    const missing = splits.filter(s => !doneSplits.has(s.id));
-    const isRed  = missing.length > 0 && missing.length >= daysLeft;
-    const isWarn = !isRed && missing.length > 0 && daysLeft <= 3;
-    container.innerHTML = splits.map(s => {
-      const done = doneSplits.has(s.id);
-      const isMissing = !done;
-      let cls = 'week-badge' + (done ? ' done' : (isMissing && isRed ? ' urgent' : (isMissing && isWarn ? ' warn' : '')));
-      const color = done ? 'var(--good)' : (isMissing && isRed ? 'var(--bad)' : (isMissing && isWarn ? 'var(--warn)' : (SPLIT_COLORS[s.id] || 'var(--text-3)')));
-      return '<div class="' + cls + '">'
-        + '<span class="week-badge-icon" style="color:' + color + '">' + (done ? '✓' : '○') + '</span>'
-        + '<span>' + escape(s.name) + '</span>'
-        + '</div>';
-    }).join('');
+    const c = computeCycle();
+    const daysLeft = 7 - c.dayN + 1;
+    const isRed  = c.missing.length > 0 && c.dayN > 7;
+    const isWarn = !isRed && c.missing.length > 0 && c.dayN > 0 && (c.dayN >= 6 || c.missing.length > daysLeft);
+    const nDone = c.ids.length - c.missing.length;
 
-    // Photo reminder: all splits done + no photo taken this week → pulse the progress photo button
-    const allDone = splits.every(s => doneSplits.has(s.id));
-    const weekStart = wtDateKey(weekDays[0]);
-    const weekEnd   = wtDateKey(weekDays[6]);
-    const hasPhotoThisWeek = photos.some(p => p.dateKey >= weekStart && p.dateKey <= weekEnd);
+    let label, stateCls = '';
+    if (c.closed)        { label = 'Ciclo completo ✓'; stateCls = 'good'; }
+    else if (!c.start)   { label = 'Ciclo nuevo · empieza hoy'; }
+    else                 { label = 'Ciclo · día <b>' + c.dayN + '</b>' + (isRed ? ' · vas tarde' : ''); stateCls = isRed ? 'bad' : (isWarn ? 'warn' : ''); }
+
+    const badge = (s, extra) => {
+      const done = extra ? c.extrasDone.has(s.id) : c.done.has(s.id);
+      const isNext = !extra && s.id === c.next;
+      const cls = 'week-badge'
+        + (extra ? ' extra' : '')
+        + (done ? ' done' : (!extra && isRed ? ' urgent' : (!extra && isWarn ? ' warn' : '')))
+        + (isNext ? ' next' : '');
+      const col = CYCLE_COLORS[splitKind(s.id)] || '#9CA3AF';
+      const tag = splitTag(s.name);
+      return '<div class="' + cls + '" style="--c:' + col + '">'
+        + (isNext ? '<span class="cyc-next">Toca</span>' : '')
+        + '<span class="cyc-ico">' + splitIconSvg(s.id) + (tag ? '<span class="cyc-tag">' + tag + '</span>' : '') + '</span>'
+        + '<span class="cyc-name">' + escape(splitShort(s.name)) + '</span>'
+        + '</div>';
+    };
+    const byId = {}; state.days.forEach(d => { byId[d.id] = d; });
+    container.innerHTML =
+        '<div class="cyc-head"><span class="cyc-state ' + stateCls + '">' + label + '</span><span><b>' + nDone + '</b>/' + c.ids.length + '</span></div>'
+      + '<div class="cyc-bar"><i style="width:' + (c.ids.length ? Math.round(nDone / c.ids.length * 100) : 0) + '%"></i></div>'
+      + '<div class="cyc-row">'
+      +   c.ids.map(id => byId[id]).filter(Boolean).map(s => badge(s, false)).join('')
+      +   CYCLE_EXTRA.map(id => byId[id]).filter(Boolean).map(s => badge(s, true)).join('')
+      + '</div>';
+
+    // Foto de progreso: ciclo cerrado en los últimos 7 días y sin foto desde que empezó.
+    const lc = c.lastClosed;
+    const todayDk = wtDateKey(new Date());
     const progressLink = $('wtProgressLink');
     if (progressLink) {
-      const remind = allDone && !hasPhotoThisWeek;
+      const remind = !!lc && daysBetween(lc.end, todayDk) <= 7 && !photos.some(p => p.dateKey >= lc.start);
       progressLink.classList.toggle('photo-reminder', remind);
       const lbl = progressLink.querySelector('.wt-progress-label');
       if (lbl) lbl.textContent = remind ? '📸 ¡SUBE TU FOTO DE LA SEMANA!' : 'PROGRESS PHOTOS';
@@ -3358,15 +3496,18 @@ details.po-more[open] > summary::after { content: '–'; }
       empty.classList.remove('hidden');
     } else {
       empty.classList.add('hidden');
-      list.innerHTML = sum.perEx.map(e => {
+      // El último ejercicio que tocaste, arriba: en circuito sabes al momento por dónde vas.
+      const lastTs = e => Math.max.apply(null, e.sets.map(s => Date.parse(s.date) || 0));
+      const rows = sum.perEx.slice().sort((a, b) => lastTs(b) - lastTs(a));
+      list.innerHTML = rows.map((e, i) => {
         const top = e.ex.bw
           ? 'top ' + Math.max.apply(null, e.sets.map(s => s.reps)) + ' reps'
           : 'top ' + Math.max.apply(null, e.sets.map(s => s.weight)) + u;
         const meta = e.ex.bw
           ? (e.sets.length + ' set' + (e.sets.length === 1 ? '' : 's') + ' · ' + top)
           : (e.sets.length + ' set' + (e.sets.length === 1 ? '' : 's') + ' · ' + top + ' · ' + Math.round(e.vol) + u + ' total');
-        return '<li class="po-tw-row">'
-          + '<span class="po-tw-row-name">' + escape(e.ex.name) + '</span>'
+        return '<li class="po-tw-row' + (i === 0 ? ' is-last' : '') + '">'
+          + '<span class="po-tw-row-name">' + (i === 0 ? '<span class="po-tw-last">Último</span>' : '') + escape(e.ex.name) + '</span>'
           + '<span class="po-tw-row-meta">' + meta + '</span>'
           + '</li>';
       }).join('');

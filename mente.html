@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Mente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+<script src="lock.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+/* MENTE v1 (2026-11-21) — apego ansioso. Pedido por Omar: una lectura de
+   2-3 min al día que cambie el chip + un SOS para cuando se dispara.
+   Base: investigación en aios-omar/social/anxious-attachment.md.
+   Nada de tácticas ni juegos: el objetivo es seguridad real, no parecer frío. */
+:root {
+  --text-primary:#FAFAFA; --text-secondary:#B8B6B0; --text-tertiary:#76746E;
+  --emerald:#6BE3A4; --warning:#F2C063; --danger:#FF6B6B; --cool:#7DD3FC; --violet:#C4B5FD;
+  --card:rgba(255,255,255,.03); --line:rgba(255,255,255,.07);
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --serif:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;background:#050506;color:var(--text-secondary);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+.wrap{max-width:560px;margin:0 auto;padding:4px max(16px,env(safe-area-inset-right)) max(60px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+h1{margin:6px 0 0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:38px;color:#EDEAE2;line-height:1.05}
+.sub{margin-top:6px;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary)}
+.eyebrow{font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--text-tertiary);margin:26px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card + .card{margin-top:10px}
+
+/* Lectura del día */
+.read{position:relative;overflow:hidden;padding:20px 18px 16px;border-color:rgba(196,181,253,.22);background:linear-gradient(160deg,rgba(196,181,253,.08),rgba(125,211,252,.03) 55%,transparent)}
+.read-meta{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--violet)}
+.read h2{margin:10px 0 2px;font-family:var(--serif);font-style:italic;font-weight:500;font-size:27px;line-height:1.12;color:var(--text-primary)}
+.read .key{margin:12px 0 4px;padding:12px 14px;border-left:2px solid var(--violet);background:rgba(196,181,253,.06);border-radius:0 10px 10px 0;font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.4;color:#EDEAE2}
+.read p{font-size:15.5px;line-height:1.62;margin:12px 0;color:#D6D3CC}
+.read p b{color:var(--text-primary)}
+.read .act{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px solid rgba(107,227,164,.28);background:rgba(107,227,164,.06);font-size:14.5px;line-height:1.5;color:#D6D3CC}
+.read .act strong{display:block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:4px}
+.read .src{margin-top:12px;font-size:11.5px;line-height:1.45;color:var(--text-tertiary)}
+.read-nav{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;padding:12px 10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text-primary);font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn.primary{background:var(--emerald);color:#06281c;border-color:transparent}
+.btn.primary.done{background:rgba(107,227,164,.14);color:var(--emerald);border-color:rgba(107,227,164,.35)}
+.btn.small{flex:0 0 auto;padding:12px 16px}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:14px}
+.dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.12)}
+.dots i.r{background:rgba(107,227,164,.55)}
+.dots i.cur{background:var(--violet);transform:scale(1.35)}
+
+/* SOS */
+.sos-open{width:100%;display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;border:1px solid rgba(255,107,107,.30);background:linear-gradient(150deg,rgba(255,107,107,.10),rgba(255,107,107,.02));color:var(--text-primary);text-align:left;cursor:pointer;font-family:var(--font)}
+.sos-open .ico{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,107,107,.14);color:var(--danger);font-size:20px}
+.sos-open b{display:block;font-size:16px}
+.sos-open span{font-size:13px;color:var(--text-secondary)}
+.steps{counter-reset:s;margin-top:10px}
+.step{position:relative;padding:14px 14px 14px 52px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:14px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;font-weight:800;color:#0a0a0b;background:var(--text-primary)}
+.step h4{margin:2px 0 4px;font-size:15px;color:var(--text-primary)}
+.step p{margin:4px 0;font-size:14px;line-height:1.5}
+.step .q{font-family:var(--serif);font-style:italic;color:#EDEAE2}
+.breath{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0 4px}
+.orb{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,rgba(125,211,252,.35),rgba(125,211,252,.08) 70%);border:1px solid rgba(125,211,252,.35);font-family:var(--font-mono);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--cool);transform:scale(.72);transition:transform 4s ease-in-out}
+.orb.in{transform:scale(1)}
+.orb.out{transform:scale(.72);transition-duration:6s}
+.timer{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary)}
+
+/* Señales + ciencia */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:13px;color:var(--text-secondary)}
+.sci p{margin:0 0 10px;font-size:14px;line-height:1.55}
+.sci p:last-child{margin-bottom:0}
+.sci b{color:var(--text-primary)}
+.sci a{color:var(--cool)}
+.note{font-size:12.5px;line-height:1.5;color:var(--text-tertiary);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mente</h1>
+  <div class="sub">Apego ansioso → seguro · 3 min al día</div>
+
+  <div class="eyebrow"><span>Lectura de hoy</span><span id="readCount"></span></div>
+  <article class="card read" id="read"></article>
+
+  <div class="eyebrow"><span>Cuando se dispara</span></div>
+  <button class="sos-open" id="sosOpen" type="button">
+    <span class="ico">!</span>
+    <span><b>SOS · me está entrando la ansiedad</b><span>No contesta, la noto fría, quiero escribirle otra vez… 5 pasos, 3 minutos.</span></span>
+  </button>
+  <div id="sos" hidden>
+    <div class="steps">
+      <div class="card step">
+        <h4>Nómbralo</h4>
+        <p class="q">“Se me ha activado el sistema de apego. Esto es una alarma, no un dato sobre ella.”</p>
+        <p>Ponerle nombre a la emoción baja su intensidad. No tienes que creerte lo que dice la alarma.</p>
+      </div>
+      <div class="card step">
+        <h4>Respira 90 segundos</h4>
+        <div class="breath">
+          <div class="orb" id="orb">Listo</div>
+          <div class="timer" id="btimer">Inhala 4 s · exhala 6 s · 9 veces</div>
+          <button class="btn small" id="bstart" type="button">Empezar</button>
+        </div>
+      </div>
+      <div class="card step">
+        <h4>Hechos vs. película</h4>
+        <p><b>Hechos:</b> lo que ha pasado de verdad (ej. “lleva 5 h sin contestar”).</p>
+        <p><b>Película:</b> lo que tu cabeza añade (“ya no le intereso”, “está con otro”).</p>
+        <p class="q">¿Qué otras 3 explicaciones hay? ¿Qué le diría a un amigo que me contara esto?</p>
+      </div>
+      <div class="card step">
+        <h4>No mandes el mensaje de protesta</h4>
+        <p>Escríbelo en Notas, no en el chat. Si mañana por la mañana sigue teniendo sentido, mándalo. Casi nunca lo tiene.</p>
+        <p>Si de verdad necesitas algo de ella, pídelo <b>una vez</b>, directo y tranquilo. Eso es comunicación, no protesta.</p>
+      </div>
+      <div class="card step">
+        <h4>Vuelve a tu vida</h4>
+        <p>Haz una cosa tuya ahora: gym, una llamada a un amigo, 20 minutos de trabajo en el negocio, una ducha y a dormir. La seguridad se construye con lo que <b>tú</b> haces, no con lo que ella contesta.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="eyebrow"><span>Mis señales de alarma</span></div>
+  <div class="card">
+    <p style="margin:0 0 10px;font-size:14px;line-height:1.5">Si te pillas haciendo una de estas, para y abre el SOS:</p>
+    <div class="chips">
+      <span class="chip">Mirar si está en línea</span>
+      <span class="chip">Releer el chat buscando señales</span>
+      <span class="chip">Escribir 2 veces seguidas sin respuesta</span>
+      <span class="chip">Mirar sus redes / a quién sigue</span>
+      <span class="chip">Hacerme el frío para castigar</span>
+      <span class="chip">Planear el futuro tras 2 citas</span>
+      <span class="chip">Dar mucho rápido para asegurar</span>
+      <span class="chip">Celos de gente que no conozco</span>
+      <span class="chip">Cancelar mis planes por si me escribe</span>
+    </div>
+  </div>
+
+  <div class="eyebrow"><span>Lo que dice la ciencia</span></div>
+  <div class="card sci">
+    <p><b>Se puede cambiar.</b> El apego es una estrategia aprendida, no un rasgo fijo. Hay adultos que pasan a “seguridad ganada” (earned security): no por haber tenido una infancia fácil, sino por haber entendido y ordenado su historia.</p>
+    <p><b>Lo que más lo baja a largo plazo es tu propia autoeficacia</b>, no que te tranquilicen. Un estudio de 2 años con parejas: la ansiedad de apego bajó en quienes ganaban sensación de competencia con sus propias experiencias. Que la otra persona te calme ayuda en el momento, pero depender de eso mantiene la ansiedad.</p>
+    <p><b>Al principio es normal que se dispare.</b> La ansiedad es más intensa en las primeras fases de conocer a alguien. No es que estés roto: es el momento en que el sistema se activa. Lo que importa es qué haces con ella.</p>
+    <p><b>La autocompasión funciona.</b> Un programa de mindfulness + autocompasión bajó la ansiedad de apego y subió el apego seguro, y se mantenía a los 6 meses. Hablarte como a un amigo no es blando: es lo que mueve la aguja.</p>
+    <p><b>Recordar a alguien que te dio seguridad calma.</b> En experimentos, activar el recuerdo de una figura segura reduce los sentimientos de rechazo, sobre todo en personas ansiosas.</p>
+    <p><b>Los celos alejan.</b> En los hombres sensibles al rechazo, los celos son justo lo que más insatisfacción genera en la pareja. Lo posesivo no protege el vínculo: lo erosiona.</p>
+  </div>
+
+  <p class="note">Esto no sustituye a la terapia — es el entrenamiento entre sesiones. Opciones baratas mientras no hay dinero: psicólogo de la Seguridad Social (pídelo a tu médico de cabecera, hay lista de espera: apúntate ya), y las clínicas de psicología de las universidades, que suelen tener tarifas reducidas. Fuentes completas en el AIOS: <i>social/anxious-attachment.md</i>.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+
+  // ── Lecturas (rotan una por día) ─────────────────────────────
+  const R = [
+    { t: 'Lo que te pasa tiene nombre',
+      key: 'No eres “demasiado”. Tienes una alarma que se dispara antes de tiempo.',
+      p: [
+        'Cuando no estás conociendo a nadie te sientes seguro, y es verdad: la alarma está apagada. El apego ansioso no se ve en soledad; se ve cuando aparece alguien que te importa. Por eso a la segunda cita, de repente, todo se vuelve urgente.',
+        'Los investigadores lo llaman <b>hiperactivación</b>: ante la mínima señal de distancia, tu sistema sube el volumen para recuperar la cercanía. Más mensajes, más vigilancia, más pensar en ella. Es una estrategia que aprendiste porque en algún momento te sirvió. Hoy ya no te sirve.',
+        'El objetivo no es dejar de sentirlo. El objetivo es <b>notar la alarma y no obedecerla</b>. Sentir ansiedad no es el problema; actuar desde ella, sí.'
+      ],
+      act: 'Hoy, cuando notes el primer pinchazo, di por dentro: “Ya está la alarma.” Solo eso. Nombrar baja el volumen.',
+      src: 'Mikulincer & Shaver, modelo de hiperactivación del apego.' },
+
+    { t: 'La segunda cita no es una relación',
+      key: 'Conoces a una persona, no a tu futuro.',
+      p: [
+        'Tras dos citas sabes muy poco de ella. Lo que sientes no es por ella: es por la historia que tu cabeza ya ha escrito — la pareja, el viaje, el miedo a perderla. Estás defendiendo algo que todavía no existe.',
+        'Tu patrón es <b>dar mucho y rápido para asegurar el vínculo</b>. Parece generosidad, pero transmite prisa y miedo, y te quita la posibilidad de ver si ella también invierte.',
+        'Regla simple: <b>invierte al ritmo de la evidencia</b>. Ella propone, tú propones. Ella se abre, tú te abres. No vas por delante para asegurarte; vas al lado para conocerla.'
+      ],
+      act: 'Antes de escribirle o de proponer algo grande, pregúntate: “¿Esto lo hago porque me apetece o para calmar mi miedo?” Si es lo segundo, espera.',
+      src: 'Patrón de over-giving trabajado en terapia; Levine & Heller, “Attached”.' },
+
+    { t: 'El silencio no es un mensaje',
+      key: 'Cuando no hay datos, tu cabeza rellena el hueco con la peor película.',
+      p: [
+        'Ella tarda en contestar. Tu cerebro no dice “estará ocupada”; dice “se está enfriando”. No es que seas pesimista: el cerebro ansioso está entrenado para detectar amenazas de abandono y ve señales donde no las hay.',
+        'El tiempo de respuesta dice muy poco de lo que alguien siente. La gente trabaja, conduce, está con amigos, se le olvida. Tú mismo pasas 12 horas conduciendo y no contestas a nadie.',
+        'Separa <b>hechos</b> de <b>película</b>. Hecho: “no ha contestado en 5 horas”. Película: “ya no le intereso”. Solo los hechos merecen una respuesta.'
+      ],
+      act: 'Cuando te pase, escribe 3 explicaciones neutras de por qué no contesta. Te darás cuenta de que la peor es la menos probable.',
+      src: 'Investigación sobre sesgos atencionales y ansiedad de apego.' },
+
+    { t: 'Protesta vs. petición',
+      key: 'Un mensaje claro vale más que diez mensajes ansiosos.',
+      p: [
+        '“Conducta de protesta” es todo lo que haces para recuperar cercanía sin pedirla: escribir varias veces, mirar si está en línea, hacerte el frío para que reaccione, insinuar celos. Te da un alivio de 5 minutos y suele empujar a la otra persona más lejos.',
+        'La alternativa segura es aburrida y funciona: <b>pedir directamente, una vez, con calma</b>. “Me gusta cuando hablamos durante la semana, ¿te apetece?” Si la respuesta no te encaja, eso es información, no un fracaso.',
+        'Un hombre seguro no es el que no siente nada. Es el que dice lo que quiere y <b>tolera la respuesta</b>.'
+      ],
+      act: 'Revisa tu último chat con alguien que te gustaba. Busca un mensaje de protesta. Reescríbelo como petición directa. Solo para entrenar.',
+      src: 'Levine & Heller (protest behavior); Mikulincer & Shaver (estrategias hiperactivadoras).' },
+
+    { t: 'Tu vida es el ancla',
+      key: 'La seguridad no te la da su respuesta. Te la da lo que tú construyes.',
+      p: [
+        'Un estudio siguió a parejas durante dos años. Que la pareja te tranquilice ayudaba en el momento, pero <b>no bajaba la ansiedad a largo plazo</b>. Lo que sí la bajaba: sentirse competente con sus propias experiencias.',
+        'Traducido: cada sesión de gym, cada cliente que contactas, cada día que cumples lo que te prometiste es un ladrillo de seguridad. Y depender de que ella te calme mantiene viva la ansiedad.',
+        'Cuando tu vida está llena — entreno, negocio, amigos, proyectos — una persona nueva es un plus, no un salvavidas. Y eso se nota. No porque lo finjas, sino porque es verdad.'
+      ],
+      act: 'Hoy, cuando te venga ella a la cabeza, haz una cosa de tu lista que te haga sentir capaz. Luego vuelve al móvil, si quieres.',
+      src: 'Arriaga et al. (2021), Self-efficacy and declines over time in attachment anxiety.' },
+
+    { t: 'Elegir, no ser elegido',
+      key: 'La pregunta no es “¿le gusto?”. Es “¿me gusta ella, y me trata bien?”',
+      p: [
+        'La mente ansiosa se pasa la cita examinando si cae bien. Así te olvidas de lo más importante: evaluarla a ella. ¿Es constante? ¿Cumple lo que dice? ¿Te sientes tranquilo a su lado o en vilo?',
+        'Ojo con una trampa: la ansiedad confunde <b>incertidumbre con química</b>. La persona que te tiene en vilo parece la más emocionante. Muchas veces solo es la que más dispara tu alarma. La persona correcta suele sentirse más tranquila, no menos.',
+        'Tus estándares no son un filtro para que te acepten; son un filtro para que tú decidas.'
+      ],
+      act: 'Escribe 3 cosas que necesitas ver en alguien antes de ilusionarte (ej. constancia, interés recíproco, respeto a tu tiempo). Úsalas en la próxima cita.',
+      src: 'Levine & Heller, “Attached” (activación confundida con amor).' },
+
+    { t: 'Háblate como a un amigo',
+      key: 'Atacarte no te hace mejor. Te hace más ansioso.',
+      p: [
+        'Después de un mensaje de más o una cita rara, la voz interna se pone cruel: “eres patético”, “lo has vuelto a hacer”. Eso no es exigencia: es vergüenza. Y la vergüenza alimenta justo la ansiedad que quieres quitarte.',
+        'Un programa basado en <b>autocompasión</b> bajó la ansiedad de apego y subió el apego seguro, y el efecto seguía a los seis meses. Lo que movía el cambio era precisamente la autocompasión.',
+        'Autocompasión no es excusarte. Es: “La he cagado, es humano, ¿qué hago distinto la próxima vez?” Hard coach por fuera, buen amigo por dentro.'
+      ],
+      act: 'Cuando te pilles insultándote, pon la mano en el pecho y di: “Esto es difícil. Le pasa a mucha gente. ¿Qué necesito ahora?”',
+      src: 'Navarro-Gil et al. (2018), Attachment-Based Compassion Therapy.' },
+
+    { t: 'Tu base segura',
+      key: 'Tu cuerpo puede aprender seguridad recordándola.',
+      p: [
+        'En experimentos, cuando a la gente se le hace pensar en alguien que le hizo sentir seguro y aceptado, se siente <b>menos rechazada</b> y responde mejor al dolor emocional. Funciona especialmente en personas con apego ansioso.',
+        'No tiene que ser familia. Puede ser un amigo de verdad, un entrenador, un profesor, tu terapeuta, o tu propia versión de dentro de 5 años: el Omar que ya tiene su negocio, su cuerpo y su calma.',
+        'Cuando se dispara la alarma, no busques esa seguridad en el chat. Búscala en esa imagen.'
+      ],
+      act: 'Elige tu figura segura ahora. Cierra los ojos 60 segundos e imagina que te dice: “Estás bien. No necesitas que ella conteste para estar bien.”',
+      src: 'Mikulincer, Shaver et al., estudios de “security priming”.' },
+
+    { t: 'Lo posesivo nace del miedo',
+      key: 'No puedes poseer a nadie. Solo puedes ser alguien con quien ella quiera quedarse.',
+      p: [
+        'Los celos y la posesividad parecen amor intenso. En realidad son miedo a perder. Y la investigación es clara: en hombres sensibles al rechazo, <b>los celos son lo que más insatisfacción provoca en la pareja</b>. Lo que haces para no perderla es lo que la aleja.',
+        'La confianza es una decisión apoyada en evidencia: si alguien es constante, confías; si no lo es, no hay que vigilarla, hay que irse.',
+        'La libertad es atractiva. Una persona que siente que puede irse y elige quedarse está contigo de verdad.'
+      ],
+      act: 'La próxima vez que sientas celos, pregúntate: “¿Tengo un hecho o solo miedo?” Sin hecho, no hay conversación que tener. Respira y sigue con tu día.',
+      src: 'Downey & Feldman (1996), Rejection sensitivity in intimate relationships.' },
+
+    { t: 'La calma no se finge',
+      key: 'No se trata de parecer seguro. Se trata de no necesitar que salga bien.',
+      p: [
+        'Has dicho que la ansiedad no es atractiva. Es verdad, pero la solución no es hacerte el frío ni contar horas para contestar. Eso es otra forma de ansiedad, con disfraz.',
+        'Lo que sí atrae es alguien que <b>disfruta del proceso sin aferrarse al resultado</b>: dice lo que le gusta, propone planes, y si no encaja, lo acepta y sigue con su vida, que está llena.',
+        'Mientras empiezas, conocer a más de una persona en las primeras citas evita que pongas todo tu sistema nervioso en una sola. No es frialdad: es proporción.'
+      ],
+      act: 'Antes de tu próxima cita, piensa: “Hoy vengo a pasarlo bien y a ver si ella encaja conmigo. El resultado no define mi valor.”',
+      src: 'Levine & Heller; Finkel et al. sobre la ansiedad en las primeras fases.' }
+  ];
+
+  const READ_KEY = 'mente_read_v1';
+  let read = {};
+  try { read = JSON.parse(localStorage.getItem(READ_KEY) || '{}') || {}; } catch (e) {}
+  const saveRead = () => { try { localStorage.setItem(READ_KEY, JSON.stringify(read)); } catch (e) {} };
+
+  const dayIdx = Math.floor((new Date().setHours(12,0,0,0) - new Date(2026, 10, 21, 12).getTime()) / 86400000);
+  const today = ((dayIdx % R.length) + R.length) % R.length;
+  let cur = today;
+
+  function render() {
+    const r = R[cur];
+    const done = !!read[cur];
+    $('read').innerHTML =
+        '<div class="read-meta"><span>' + (cur === today ? 'Hoy' : 'Lectura') + ' · ' + (cur + 1) + '/' + R.length + '</span><span>~2 min</span></div>'
+      + '<h2>' + r.t + '</h2>'
+      + '<div class="key">' + r.key + '</div>'
+      + r.p.map(x => '<p>' + x + '</p>').join('')
+      + '<div class="act"><strong>Hazlo hoy</strong>' + r.act + '</div>'
+      + '<div class="src">' + r.src + '</div>'
+      + '<div class="read-nav">'
+      +   '<button class="btn small" id="prev" type="button" aria-label="Anterior">‹</button>'
+      +   '<button class="btn primary' + (done ? ' done' : '') + '" id="mark" type="button">' + (done ? '✓ Leída' : 'Marcar como leída') + '</button>'
+      +   '<button class="btn small" id="next" type="button" aria-label="Siguiente">›</button>'
+      + '</div>'
+      + '<div class="dots">' + R.map((_, i) => '<i class="' + (i === cur ? 'cur' : (read[i] ? 'r' : '')) + '"></i>').join('') + '</div>';
+    $('readCount').textContent = Object.keys(read).length + '/' + R.length + ' leídas';
+    $('prev').onclick = () => { cur = (cur - 1 + R.length) % R.length; render(); };
+    $('next').onclick = () => { cur = (cur + 1) % R.length; render(); };
+    $('mark').onclick = () => { if (read[cur]) delete read[cur]; else read[cur] = new Date().toISOString(); saveRead(); render(); };
+  }
+  render();
+
+  // ── SOS ──────────────────────────────────────────────────────
+  $('sosOpen').onclick = () => {
+    const s = $('sos'); s.hidden = !s.hidden;
+    if (!s.hidden) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  let bTimer = null;
+  $('bstart').onclick = () => {
+    if (bTimer) { clearTimeout(bTimer); bTimer = null; }
+    const orb = $('orb'), t = $('btimer');
+    let round = 0;
+    const N = 9;
+    $('bstart').textContent = 'Reiniciar';
+    (function cycle() {
+      if (round >= N) { orb.className = 'orb'; orb.textContent = 'Hecho'; t.textContent = '90 s. ¿Cómo está la alarma ahora, del 1 al 10?'; bTimer = null; return; }
+      round++;
+      orb.className = 'orb in'; orb.textContent = 'Inhala'; t.textContent = round + ' / ' + N;
+      bTimer = setTimeout(() => {
+        orb.className = 'orb out'; orb.textContent = 'Exhala';
+        bTimer = setTimeout(cycle, 6000);
+      }, 4000);
+    })();
+  };
+})();
+</script>
+</body>
+</html>
